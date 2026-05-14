@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amiral Battı — Multiplayer</title>
+  <meta name="description" content="Arkadaşlarınla gerçek zamanlı Amiral Battı oyna">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- LOBBY -->
+  <div id="lobby-screen" class="screen active">
+    <div class="lobby-card">
+      <div class="lobby-logo">⚓</div>
+      <h1 class="lobby-title">Amiral Battı</h1>
+      <p class="lobby-subtitle">Arkadaşınla gerçek zamanlı oyna</p>
+      <div class="input-group">
+        <label for="nickname-input">Takma Ad</label>
+        <input type="text" id="nickname-input" placeholder="Adını gir..." maxlength="16" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" id="btn-create">Oda Oluştur</button>
+      <div class="waiting-section" id="waiting-section">
+        <div class="waiting-text">Oda Kodu</div>
+        <div class="room-code-big" id="room-code-display">-----</div>
+        <div class="waiting-text">Rakip bekleniyor<span class="waiting-dots"></span></div>
+      </div>
+      <div class="divider">veya</div>
+      <div class="input-group">
+        <label for="code-input">Oda Kodu</label>
+        <div class="join-row">
+          <input type="text" id="code-input" placeholder="5 haneli kod" maxlength="5" autocomplete="off">
+          <button class="btn btn-secondary" id="btn-join">Katıl</button>
+        </div>
+      </div>
+      <div class="lobby-error" id="lobby-error"></div>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game-screen" class="screen">
+    <div class="top-bar">
+      <div class="player-info left">
+        <div class="avatar p1" id="p1-avatar">?</div>
+        <span class="player-name" id="p1-name">Oyuncu 1</span>
+      </div>
+      <div class="turn-center">
+        <div class="turn-label">Durum</div>
+        <div class="turn-status" id="turn-status">Gemilerini Yerleştir</div>
+        <div class="room-code-small" id="room-code-small"></div>
+      </div>
+      <div class="player-info right">
+        <div class="avatar p2" id="p2-avatar">?</div>
+        <span class="player-name" id="p2-name">Oyuncu 2</span>
+      </div>
+    </div>
+
+    <div class="game-content">
+      <div class="status-msg" id="status-msg"></div>
+      <div class="mobile-tabs" id="mobile-tabs">
+        <button class="active" data-tab="my">Kendi Filon</button>
+        <button data-tab="opp">Rakip Filo</button>
+      </div>
+      <div class="boards-area">
+        <div class="board-with-fleet">
+          <div class="fleet-status fleet-left" id="my-fleet"></div>
+          <div class="board-panel" id="my-board-panel">
+            <div class="board-panel-title">Kendi Filon</div>
+            <div class="board-grid" id="my-grid"></div>
+          </div>
+        </div>
+        <div class="board-with-fleet">
+          <div class="board-panel" id="opp-board-panel">
+            <div class="board-panel-title">Rakip Filo</div>
+            <div class="board-grid" id="opp-grid"></div>
+          </div>
+          <div class="fleet-status fleet-right" id="opp-fleet"></div>
+        </div>
+      </div>
+      <!-- Ship Dock (kompakt, yerleştirme aşamasında görünür) -->
+      <div class="ship-dock" id="ship-dock">
+        <div class="dock-ships" id="dock-ships"></div>
+        <div class="dock-controls">
+          <button class="btn btn-secondary btn-sm" id="btn-reset">Sıfırla</button>
+          <button class="btn btn-primary btn-sm" id="btn-ready" disabled>Hazırım</button>
+        </div>
+      </div>
+      <!-- Chat Panel -->
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">💬 Sohbet</div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-bottom">
+          <div class="chat-quick">
+            <button data-msg="İyi oyun!">İyi oyun!</button>
+            <button data-msg="Güzel hamle!">Güzel hamle!</button>
+            <button data-msg="Vay be!">Vay be!</button>
+            <button data-msg="GG 🤝">GG 🤝</button>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Mesaj yaz..." maxlength="100" autocomplete="off">
+            <button id="chat-send">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over -->
+  <div class="game-over-overlay" id="game-over-overlay">
+    <div class="game-over-card">
+      <div class="game-over-icon" id="go-icon">🏆</div>
+      <div class="game-over-title" id="go-title">Kazandın!</div>
+      <div class="game-over-sub" id="go-sub">Tebrikler!</div>
+      <button class="btn btn-primary" id="btn-rematch">Tekrar Oyna</button>
+    </div>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
