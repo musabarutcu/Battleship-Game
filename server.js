@@ -166,8 +166,20 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const room = rooms.get(socket.roomCode);
     if (room) {
-      io.to(room.code).emit('opponent-disconnected');
-      setTimeout(() => { const r = rooms.get(socket.roomCode); if (r && !r.players.some(p => io.sockets.sockets.get(p.id)?.connected)) rooms.delete(socket.roomCode); }, 30000);
+      // Only notify the OTHER player(s), not the disconnecting socket itself
+      room.players.forEach((p, i) => {
+        if (p.id !== socket.id) {
+          const s = io.sockets.sockets.get(p.id);
+          if (s && s.connected) s.emit('opponent-disconnected');
+        }
+      });
+      // Clean up room after grace period if both players gone
+      setTimeout(() => {
+        const r = rooms.get(socket.roomCode);
+        if (r && !r.players.some(p => io.sockets.sockets.get(p.id)?.connected)) {
+          rooms.delete(socket.roomCode);
+        }
+      }, 30000);
     }
   });
 });
