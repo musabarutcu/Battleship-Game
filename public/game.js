@@ -2,9 +2,14 @@ const socket = io({ transports: ['websocket'] });
 const B = 10, COLS = 'ABCDEFGHIJ'.split('');
 let playerIndex = -1, roomCode = '', phase = 'lobby', isMyTurn = false;
 let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', myNick = '';
-let adjHintEnabled = true, gameStartTime = null, myAvatar = '😎', soundEnabled = true;
+let adjHintEnabled = true, gameStartTime = null, myAvatar = 'avatar1.png', soundEnabled = true;
 let myBoard = [], myShots = [], myHitsReceived = [];
 const sunkOppShips = [];
+
+const $=id=>document.getElementById(id);
+const turnStatus=$('turn-status'), statusMsg=$('status-msg'), shipDock=$('ship-dock');
+const dockShipsEl=$('dock-ships'), btnReady=$('btn-ready'), gameOverOverlay=$('game-over-overlay');
+const chatPanel=$('chat-panel'), chatMessages=$('chat-messages'), chatInput=$('chat-input');
 
 function resetBoards() {
   myBoard = Array.from({length:B},()=>Array(B).fill(0));
@@ -82,11 +87,6 @@ function setLang(l) {
 }
 $('btn-lang-tr').addEventListener('click', () => setLang('tr'));
 $('btn-lang-en').addEventListener('click', () => setLang('en'));
-
-const $=id=>document.getElementById(id);
-const turnStatus=$('turn-status'), statusMsg=$('status-msg'), shipDock=$('ship-dock');
-const dockShipsEl=$('dock-ships'), btnReady=$('btn-ready'), gameOverOverlay=$('game-over-overlay');
-const chatPanel=$('chat-panel'), chatMessages=$('chat-messages'), chatInput=$('chat-input');
 
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active')}
 function setStatus(msg,hl){statusMsg.textContent=msg;statusMsg.className='status-msg'+(hl?' highlight':'')}
@@ -708,7 +708,8 @@ function applyAdjHints(){
 socket.on('opponent-disconnected',()=>{setStatus(texts[lang].oppDisc,false);turnStatus.textContent=texts[lang].discWait});
 
 function setPlayerInfo(players){
-  $('p1-name').textContent=players[0].nickname;$('p1-avatar').textContent=players[0].avatar || players[0].nickname[0].toUpperCase();
-  $('p2-name').textContent=players[1].nickname;$('p2-avatar').textContent=players[1].avatar || players[1].nickname[0].toUpperCase();
+  const renderAvatar = p => p.avatar && p.avatar.includes('.png') ? `<img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : (p.avatar || p.nickname[0].toUpperCase());
+  $('p1-name').textContent=players[0].nickname;$('p1-avatar').innerHTML=renderAvatar(players[0]);
+  $('p2-name').textContent=players[1].nickname;$('p2-avatar').innerHTML=renderAvatar(players[1]);
   opponentNick=playerIndex===0?players[1].nickname:players[0].nickname;
 }
