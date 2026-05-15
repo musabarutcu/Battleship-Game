@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io({ transports: ['websocket'] });
 const B = 10, COLS = 'ABCDEFGHIJ'.split('');
 let playerIndex = -1, roomCode = '', phase = 'lobby', isMyTurn = false;
 let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', myNick = '';
