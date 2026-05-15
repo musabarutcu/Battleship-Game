@@ -142,7 +142,10 @@ io.on('connection', (socket) => {
     const result = { x, y, hit, sunkShip, gameOver, currentTurn: room.currentTurn };
     cb({ success: true, ...result });
     io.to(opp.id).emit('opponent-fired', result);
-    if (gameOver) io.to(room.code).emit('game-over', { winner: socket.playerIndex });
+    if (gameOver) io.to(room.code).emit('game-over', {
+      winner: socket.playerIndex,
+      ships: room.players.map(p => p.ships)
+    });
   });
 
   socket.on('chat-message', (msg) => {

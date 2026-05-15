@@ -85,6 +85,13 @@
           <div class="fleet-status fleet-right" id="opp-fleet"></div>
         </div>
       </div>
+      <!-- In-game stats bar (shown only at game over) -->
+      <div class="in-game-stats" id="in-game-stats" style="display:none;">
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-hits">0</div><div class="go-stat-lbl">İsabet</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-misses">0</div><div class="go-stat-lbl">Iska</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-accuracy">0%</div><div class="go-stat-lbl">Oran</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-time">0:00</div><div class="go-stat-lbl">Süre</div></div>
+      </div>
       <!-- Ship Dock (kompakt, yerleştirme aşamasında görünür) -->
       <div class="ship-dock" id="ship-dock">
         <div class="dock-ships" id="dock-ships"></div>
@@ -108,7 +115,6 @@
           <div class="chat-quick">
             <button data-msg="NABER CINIM?">NABER CINIM?</button>
             <button data-msg="SENİ SEVİYORUM CINIM!!">SENİ SEVİYORUM CINIM!!</button>
-            <button data-msg="KARADENİZDE GEMİLERİN Mİ BATTI CINIM">KARADENİZDE GEMİLERİN Mİ BATTI CINIM</button>
             <button data-msg="HURMA MOLASI!">HURMA MOLASI!</button>
           </div>
           <div class="chat-input-row">

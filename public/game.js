@@ -281,7 +281,7 @@ function animateHit(gridId, x, y, isHit){
   const cell=getCell(gridId,x,y);
   if(!cell)return;
   cell.classList.add(isHit?'hit-new':'miss-new');
-  setTimeout(()=>{cell.classList.remove('hit-new','miss-new')},500);
+  setTimeout(()=>{cell.classList.remove('hit-new','miss-new')},250);
 }
 
 function animateSinking(gridId, ship){
@@ -291,8 +291,8 @@ function animateSinking(gridId, ship){
       const cell=getCell(gridId,cx,cy);
       if(!cell)return;
       cell.classList.add('sinking');
-      setTimeout(()=>cell.classList.remove('sinking'),700);
-    },i*130);
+      setTimeout(()=>cell.classList.remove('sinking'),300);
+    },i*80);
   });
 }
 
@@ -470,11 +470,12 @@ socket.on('phase-change',data=>{
   phase=data.phase;
   if($('rematch-wait-overlay'))$('rematch-wait-overlay').classList.remove('visible');
   if(phase==='placement'){
-    shipDefs=data.ships;if(data.players)setPlayerInfo(data.players);
+    shipDefs=data.ships;    if(data.players)setPlayerInfo(data.players);
     showScreen('game-screen');buildGrid('my-grid',handleMyGridClick);buildGrid('opp-grid',handleOppGridClick);
     setupBoardInteraction();initPlacement();
     $('room-code-small').textContent=`Oda: ${roomCode}`;
     turnStatus.innerHTML='<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
+    $('in-game-stats').style.display='none';
     setStatus('',false);
   }
   if(phase==='battle'){
@@ -525,14 +526,37 @@ socket.on('game-over',data=>{
   $('stat-misses').textContent=misses;
   $('stat-accuracy').textContent=accuracy+'%';
   $('stat-time').textContent=mm+':'+ss;
+  $('ig-stat-hits').textContent=hits;
+  $('ig-stat-misses').textContent=misses;
+  $('ig-stat-accuracy').textContent=accuracy+'%';
+  $('ig-stat-time').textContent=mm+':'+ss;
   $('go-icon').textContent=won?'🏆':'💀';
   $('go-title').textContent=won?'Kazandın!':'Kaybettin';
   $('go-title').className='game-over-title '+(won?'win':'lose');
   $('go-sub').textContent=won?'Tebrikler, tüm düşman gemilerini batırdın!':'Tüm gemilerin battı...';
+  
+  // Reveal opponent unhit ships
+  if (data.ships) {
+    const oppIdx = playerIndex === 0 ? 1 : 0;
+    const oppShips = data.ships[oppIdx];
+    if (oppShips) {
+      for (const s of oppShips) {
+        if (!s.sunk) {
+          const cells = shipCells(s);
+          for (const [cx, cy] of cells) {
+            const cell = getCell('opp-grid', cx, cy);
+            if (cell && myShots[cy][cx] === 0) cell.classList.add('opp-ship-revealed');
+          }
+        }
+      }
+    }
+  }
+
   gameOverOverlay.classList.add('visible');
   setTimeout(()=>{
     gameOverOverlay.classList.remove('visible');
     $('rematch-container').style.display = 'block';
+    $('in-game-stats').style.display = 'grid';
   }, 4500);
 });
 

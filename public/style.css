@@ -107,10 +107,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .board-panel-title{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--navy-mid);margin-bottom:10px;text-align:center}
 
 /* Grid */
-.board-grid{display:inline-grid;grid-template-columns:28px repeat(10,36px);grid-template-rows:28px repeat(10,36px);gap:2px;
-  background:linear-gradient(135deg,#c8dff5,#d9ecff,#b8d4ee,#cce4f7,#c8dff5);background-size:400% 400%;
-  animation:waterWave 10s ease infinite;border-radius:8px;padding:2px}
-@keyframes waterWave{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.board-grid{display:inline-grid;grid-template-columns:28px repeat(10,36px);grid-template-rows:28px repeat(10,36px);gap:2px}
 .grid-header{display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--navy)}
 .grid-cell{width:36px;height:36px;background:var(--water);border:1.5px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:default;position:relative;transition:all .15s;user-select:none}
 .grid-cell.ship{background:var(--navy-dark);border-color:var(--navy-darkest)}
@@ -133,12 +130,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 /* ═══ HIT EXPLOSION ═══ */
 @keyframes hitPulse{0%{transform:scale(0.2);opacity:1}60%{transform:scale(1.5);opacity:0.7}100%{transform:scale(1);opacity:1}}
 @keyframes missDrop{0%{transform:translateY(-6px) scale(0.5);opacity:0}80%{transform:translateY(2px) scale(1.1)}100%{transform:translateY(0) scale(1);opacity:1}}
-.grid-cell.hit-new::after{animation:hitPulse 0.45s cubic-bezier(0.25,0.46,0.45,0.94) forwards}
-.grid-cell.miss-new::after{animation:missDrop 0.35s ease forwards}
+.grid-cell.hit-new::after{animation:hitPulse 0.25s cubic-bezier(0.25,0.46,0.45,0.94) forwards}
+.grid-cell.miss-new::after{animation:missDrop 0.2s ease forwards}
 
 /* ═══ SINKING CASCADE ═══ */
 @keyframes sinkCell{0%{background:#ef4444;transform:scale(1.15)}40%{background:#b91c1c;transform:scale(1.05)}100%{background:var(--sunk-bg);transform:scale(1)}}
-.grid-cell.sinking{animation:sinkCell 0.6s ease forwards;z-index:2}
+.grid-cell.sinking{animation:sinkCell 0.3s ease forwards;z-index:2}
+
+/* Opponent Ship Revealed */
+.grid-cell.opp-ship-revealed{background:rgba(16, 117, 171, 0.4); border-color:var(--blue)}
 
 /* ═══ FLEET STATUS (sidebar) ═══ */
 .fleet-status{display:none;flex-direction:column;gap:8px;padding-top:34px;min-width:32px;align-items:center}
@@ -217,6 +217,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .go-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
 .go-stat-val{font-size:1.3rem;font-weight:800;color:var(--navy)}
 .go-stat-lbl{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted)}
+
+/* In-Game Stats */
+.in-game-stats{display:none;width:100%;max-width:920px;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;padding:16px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-md)}
+.in-game-stats.visible{display:grid}
 
 /* Game Over Progress */
 .go-progress-bar{width:100%;height:6px;background:var(--border);border-radius:10px;overflow:hidden;margin-top:10px}
