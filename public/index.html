@@ -11,16 +11,28 @@
 <div id="app">
   <!-- LOBBY -->
   <div id="lobby-screen" class="screen active">
+    <!-- Lang Toggle -->
+    <div class="lang-toggle">
+      <button class="active" id="btn-lang-tr">TR</button>
+      <button id="btn-lang-en">EN</button>
+    </div>
     <div class="lobby-card">
       <img src="logo-text.png" alt="Gemileri Batır" style="max-width:180px; margin:0 auto 10px; display:block;">
-      <p class="lobby-subtitle" style="font-size:1.1rem;">Hoş geldin cınım</p>
-      <div class="input-group">
-        <label for="nickname-input">Takma Ad</label>
-        <input type="text" id="nickname-input" placeholder="Adını gir..." maxlength="16" autocomplete="off">
+      <p class="lobby-subtitle" style="font-size:1.1rem;" data-i18n="welcome">Hoş geldin cınım</p>
+      <div class="avatar-picker" id="avatar-picker">
+        <div class="avatar-option active" data-avatar="😎">😎</div>
+        <div class="avatar-option" data-avatar="🏴‍☠️">🏴‍☠️</div>
+        <div class="avatar-option" data-avatar="⚓">⚓</div>
+        <div class="avatar-option" data-avatar="🦈">🦈</div>
+        <div class="avatar-option" data-avatar="🧜‍♀️">🧜‍♀️</div>
       </div>
-      <button class="btn btn-primary" id="btn-create">Oda Oluştur</button>
+      <div class="input-group">
+        <label for="nickname-input" data-i18n="nickname">Takma Ad</label>
+        <input type="text" id="nickname-input" placeholder="Adını gir..." maxlength="16" autocomplete="off" data-i18n-placeholder="nicknamePh">
+      </div>
+      <button class="btn btn-primary" id="btn-create" data-i18n="createRoom">Oda Oluştur</button>
       <div class="waiting-section" id="waiting-section">
-        <div class="waiting-text">Oda Kodu</div>
+        <div class="waiting-text" data-i18n="roomCodeLabel">Oda Kodu</div>
         <div class="room-code-big" id="room-code-display">-----</div>
         <div class="invite-link-row">
           <input type="text" id="invite-link-input" class="invite-link-input" readonly>
@@ -28,14 +40,14 @@
         </div>
         <div class="copy-confirm" id="copy-confirm">✓ Link kopyalandı!</div>
         <img class="waiting-anchor-img" src="logo-icon.png" alt="⚓">
-        <div class="waiting-text">Rakip bekleniyor...</div>
+        <div class="waiting-text" data-i18n="waitingOpponent">Rakip bekleniyor...</div>
       </div>
-      <div class="divider">veya</div>
+      <div class="divider" data-i18n="or">veya</div>
       <div class="input-group">
-        <label for="code-input">Oda Kodu</label>
+        <label for="code-input" data-i18n="roomCodeLabel">Oda Kodu</label>
         <div class="join-row">
           <input type="text" id="code-input" placeholder="5 haneli kod" maxlength="5" autocomplete="off">
-          <button class="btn btn-secondary" id="btn-join">Katıl</button>
+          <button class="btn btn-secondary" id="btn-join" data-i18n="join">Katıl</button>
         </div>
       </div>
       <div class="lobby-error" id="lobby-error"></div>
@@ -62,24 +74,24 @@
 
     <div class="game-content">
       <div id="rematch-container" style="display:none; text-align:center; width:100%; margin-bottom:12px;">
-        <button class="btn btn-primary" id="btn-rematch-top" style="font-size: 1.1rem; padding: 12px 32px; border-radius: 30px;">Yeniden Oyna</button>
+        <button class="btn btn-primary" id="btn-rematch-top" style="font-size: 1.1rem; padding: 12px 32px; border-radius: 30px;" data-i18n="rematch">Yeniden Oyna</button>
       </div>
       <div class="status-msg" id="status-msg"></div>
       <div class="mobile-tabs" id="mobile-tabs">
-        <button class="active" data-tab="my">Kendi Filon</button>
-        <button data-tab="opp">Rakip Filo</button>
+        <button class="active" data-tab="my" data-i18n="myFleet">Kendi Filon</button>
+        <button data-tab="opp" data-i18n="oppFleet">Rakip Filo</button>
       </div>
       <div class="boards-area">
         <div class="board-with-fleet">
           <div class="fleet-status fleet-left" id="my-fleet"></div>
           <div class="board-panel" id="my-board-panel">
-            <div class="board-panel-title">Kendi Filon</div>
+            <div class="board-panel-title" data-i18n="myFleet">Kendi Filon</div>
             <div class="board-grid" id="my-grid"></div>
           </div>
         </div>
         <div class="board-with-fleet">
           <div class="board-panel" id="opp-board-panel">
-            <div class="board-panel-title">Rakip Filo</div>
+            <div class="board-panel-title" data-i18n="oppFleet">Rakip Filo</div>
             <div class="board-grid" id="opp-grid"></div>
           </div>
           <div class="fleet-status fleet-right" id="opp-fleet"></div>
@@ -87,29 +99,32 @@
       </div>
       <!-- In-game stats bar (shown only at game over) -->
       <div class="in-game-stats" id="in-game-stats" style="display:none;">
-        <div class="go-stat"><div class="go-stat-val" id="ig-stat-hits">0</div><div class="go-stat-lbl">İsabet</div></div>
-        <div class="go-stat"><div class="go-stat-val" id="ig-stat-misses">0</div><div class="go-stat-lbl">Iska</div></div>
-        <div class="go-stat"><div class="go-stat-val" id="ig-stat-accuracy">0%</div><div class="go-stat-lbl">Oran</div></div>
-        <div class="go-stat"><div class="go-stat-val" id="ig-stat-time">0:00</div><div class="go-stat-lbl">Süre</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-hits">0</div><div class="go-stat-lbl" data-i18n="hits">İsabet</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-misses">0</div><div class="go-stat-lbl" data-i18n="misses">Iska</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-accuracy">0%</div><div class="go-stat-lbl" data-i18n="accuracy">Oran</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="ig-stat-time">0:00</div><div class="go-stat-lbl" data-i18n="time">Süre</div></div>
       </div>
       <!-- Ship Dock (kompakt, yerleştirme aşamasında görünür) -->
       <div class="ship-dock" id="ship-dock">
         <div class="dock-ships" id="dock-ships"></div>
         <div class="dock-controls">
-          <button class="btn btn-secondary btn-sm" id="btn-reset">Sıfırla</button>
-          <button class="btn btn-secondary btn-sm" id="btn-random">Rastgele</button>
-          <button class="btn btn-primary btn-sm" id="btn-ready" disabled>Hazırım</button>
+          <button class="btn btn-secondary btn-sm" id="btn-reset" data-i18n="reset">Sıfırla</button>
+          <button class="btn btn-secondary btn-sm" id="btn-random" data-i18n="random">Rastgele</button>
+          <button class="btn btn-primary btn-sm" id="btn-ready" disabled data-i18n="ready">Hazırım</button>
         </div>
       </div>
       <!-- Battle Helper Buttons -->
       <div class="battle-helpers" id="battle-helpers" style="display:none;">
         <button class="btn btn-toggle btn-sm" id="btn-adj-hint" title="Vurduğun gemilerin yanındaki kareleri işaretle">
-          <span id="adj-hint-icon">✓</span> Komşu İpucu
+          <span id="adj-hint-icon">✓</span> <span data-i18n="adjHint">Komşu İpucu</span>
+        </button>
+        <button class="btn btn-toggle btn-sm active" id="btn-sound" title="Ses efektlerini aç/kapat">
+          <span id="sound-icon">🔊</span> <span data-i18n="sound">Ses</span>
         </button>
       </div>
       <!-- Chat Panel -->
       <div class="chat-panel" id="chat-panel">
-        <div class="chat-header">💬 Sohbet</div>
+        <div class="chat-header">💬 <span data-i18n="chat">Sohbet</span></div>
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-bottom">
           <div class="chat-quick">
@@ -133,10 +148,10 @@
       <div class="game-over-title" id="go-title">Kazandın!</div>
       <div class="game-over-sub" id="go-sub">Tebrikler!</div>
       <div class="go-stats" id="go-stats">
-        <div class="go-stat"><div class="go-stat-val" id="stat-hits">0</div><div class="go-stat-lbl">İsabet</div></div>
-        <div class="go-stat"><div class="go-stat-val" id="stat-misses">0</div><div class="go-stat-lbl">Iska</div></div>
-        <div class="go-stat"><div class="go-stat-val" id="stat-accuracy">0%</div><div class="go-stat-lbl">Oran</div></div>
-        <div class="go-stat"><div class="go-stat-val" id="stat-time">0:00</div><div class="go-stat-lbl">Süre</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="stat-hits">0</div><div class="go-stat-lbl" data-i18n="hits">İsabet</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="stat-misses">0</div><div class="go-stat-lbl" data-i18n="misses">Iska</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="stat-accuracy">0%</div><div class="go-stat-lbl" data-i18n="accuracy">Oran</div></div>
+        <div class="go-stat"><div class="go-stat-val" id="stat-time">0:00</div><div class="go-stat-lbl" data-i18n="time">Süre</div></div>
       </div>
       <div class="go-progress-bar"><div class="go-progress-fill"></div></div>
     </div>

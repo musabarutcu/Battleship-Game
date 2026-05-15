@@ -34,8 +34,8 @@ function emptyBoard() {
   return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
 }
 
-function createPlayer(id, nickname) {
-  return { id, nickname, board: emptyBoard(), shots: emptyBoard(), ships: [], ready: false, shipsRemaining: SHIPS.length };
+function createPlayer(id, nickname, avatar) {
+  return { id, nickname, avatar, board: emptyBoard(), shots: emptyBoard(), ships: [], ready: false, shipsRemaining: SHIPS.length };
 }
 
 function getShipCells(s) {
@@ -79,27 +79,28 @@ function isShipSunk(ship, shots) {
   return true;
 }
 
-function getPlayersInfo(room) { return room.players.map(p => ({ nickname: p.nickname })); }
+function getPlayersInfo(room) { return room.players.map(p => ({ nickname: p.nickname, avatar: p.avatar })); }
 
 io.on('connection', (socket) => {
   socket.on('create-room', (data, cb) => {
     if (typeof data === 'function') { cb = data; data = {}; }
     const nickname = (data && data.nickname) || 'Oyuncu 1';
+    const avatar = (data && data.avatar) || '😎';
     let code = generateCode();
     while (rooms.has(code)) code = generateCode();
-    rooms.set(code, { code, players: [createPlayer(socket.id, nickname)], currentTurn: null, phase: 'waiting', winner: null });
+    rooms.set(code, { code, players: [createPlayer(socket.id, nickname, avatar)], currentTurn: null, phase: 'waiting', winner: null });
     socket.join(code); socket.roomCode = code; socket.playerIndex = 0;
     cb({ success: true, code, playerIndex: 0 });
   });
 
   socket.on('join-room', (data, cb) => {
     if (typeof data === 'string') data = { code: data };
-    const code = data.code, nickname = data.nickname || 'Oyuncu 2';
+    const code = data.code, nickname = data.nickname || 'Oyuncu 2', avatar = data.avatar || '😎';
     const room = rooms.get(code);
     if (!room) return cb({ success: false, error: 'Oda bulunamadı.' });
     if (room.players.length >= 2) return cb({ success: false, error: 'Oda dolu.' });
     if (room.phase !== 'waiting') return cb({ success: false, error: 'Oyun başlamış.' });
-    room.players.push(createPlayer(socket.id, nickname));
+    room.players.push(createPlayer(socket.id, nickname, avatar));
     room.phase = 'placement';
     socket.join(code); socket.roomCode = code; socket.playerIndex = 1;
     cb({ success: true, code, playerIndex: 1 });

@@ -33,10 +33,23 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
 /* ═══ LOBBY ═══ */
 #lobby-screen{min-height:100vh;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#f3f6fa 0%,#eaf1f9 50%,#f3f6fa 100%)}
-.lobby-card{background:var(--card);border-radius:20px;box-shadow:var(--shadow-lg);padding:44px 40px;width:100%;max-width:420px;text-align:center}
+
+/* Lang Toggle */
+.lang-toggle{position:absolute;top:20px;right:20px;display:flex;gap:4px;background:var(--card);padding:4px;border-radius:20px;box-shadow:var(--shadow-sm);border:1px solid var(--border)}
+.lang-toggle button{background:transparent;border:none;padding:4px 10px;font-size:0.75rem;font-weight:700;color:var(--text-muted);border-radius:16px;cursor:pointer;transition:all .2s}
+.lang-toggle button.active{background:var(--blue);color:#fff}
+
+.lobby-card{background:var(--card);border-radius:20px;box-shadow:var(--shadow-lg);padding:44px 40px;width:100%;max-width:420px;text-align:center;position:relative}
 .lobby-logo{font-size:2.4rem;margin-bottom:2px}
 .lobby-title{font-size:1.6rem;font-weight:800;color:var(--navy);margin-bottom:6px}
-.lobby-subtitle{font-size:0.85rem;color:var(--text-muted);margin-bottom:28px}
+.lobby-subtitle{font-size:0.85rem;color:var(--text-muted);margin-bottom:24px}
+
+/* Avatar Picker */
+.avatar-picker{display:flex;justify-content:center;gap:10px;margin-bottom:20px}
+.avatar-option{font-size:1.6rem;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--bg);border:2px solid var(--border);border-radius:50%;cursor:pointer;transition:all .2s;user-select:none}
+.avatar-option:hover{transform:translateY(-2px);border-color:var(--blue-light)}
+.avatar-option.active{border-color:var(--blue);background:var(--blue-lighter);box-shadow:0 4px 12px rgba(16,117,171,0.2)}
+
 .input-group{margin-bottom:16px}
 .input-group label{display:block;text-align:left;font-size:0.72rem;font-weight:700;color:var(--navy-mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.8px}
 .input-group input{width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:1rem;font-family:inherit;color:var(--text);background:var(--bg);transition:border-color .2s;outline:none}
@@ -164,7 +177,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
 /* Battle Helper Buttons */
 .battle-helpers{display:none;gap:8px;justify-content:center;width:100%;max-width:920px}
-.btn-toggle{background:var(--bg);color:var(--navy);border:2px solid var(--border);border-radius:20px;padding:6px 16px;font-size:0.8rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-toggle{background:var(--bg);color:var(--navy);border:2px solid var(--border);border-radius:20px;padding:4px 12px;font-size:0.75rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
 .btn-toggle:hover{border-color:var(--blue);color:var(--blue)}
 .btn-toggle.active{background:rgba(16,117,171,0.1);border-color:var(--blue);color:var(--blue)}
 

@@ -2,7 +2,7 @@ const socket = io({ transports: ['websocket'] });
 const B = 10, COLS = 'ABCDEFGHIJ'.split('');
 let playerIndex = -1, roomCode = '', phase = 'lobby', isMyTurn = false;
 let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', myNick = '';
-let adjHintEnabled = true, gameStartTime = null;
+let adjHintEnabled = true, gameStartTime = null, myAvatar = '😎', soundEnabled = true;
 let myBoard = [], myShots = [], myHitsReceived = [];
 const sunkOppShips = [];
 
@@ -12,6 +12,76 @@ function resetBoards() {
   myHitsReceived = Array.from({length:B},()=>Array(B).fill(0));
 }
 resetBoards();
+
+// ═══ AUDIO SYSTEM ═══
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+  if (!soundEnabled) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  const t = audioCtx.currentTime;
+  if (type === 'hit') {
+    osc.type = 'square'; osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(40, t + 0.2);
+    gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    osc.start(); osc.stop(t + 0.2);
+  } else if (type === 'miss') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(300, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
+    gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+    osc.start(); osc.stop(t + 0.1);
+  } else if (type === 'sunk') {
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t); osc.frequency.linearRampToValueAtTime(50, t + 0.5);
+    gain.gain.setValueAtTime(0.3, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.5);
+    osc.start(); osc.stop(t + 0.5);
+  } else if (type === 'start') {
+    osc.type = 'triangle'; osc.frequency.setValueAtTime(400, t); osc.frequency.setValueAtTime(600, t + 0.1);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.2, t + 0.05); gain.gain.linearRampToValueAtTime(0, t + 0.2);
+    osc.start(); osc.stop(t + 0.2);
+  }
+}
+
+// ═══ I18N ═══
+const texts = {
+  tr: {
+    welcome: "Hoş geldin cınım", nickname: "Takma Ad", nicknamePh: "Adını gir...", createRoom: "Oda Oluştur",
+    roomCodeLabel: "Oda Kodu", waitingOpponent: "Rakip bekleniyor...", or: "veya", join: "Katıl",
+    rematch: "Yeniden Oyna", myFleet: "Kendi Filon", oppFleet: "Rakip Filo", hits: "İsabet",
+    misses: "Iska", accuracy: "Oran", time: "Süre", reset: "Sıfırla", random: "Rastgele",
+    ready: "Hazırım", adjHint: "Komşu İpucu", sound: "Ses", chat: "Sohbet",
+    statusPlace: "Gemilerini Yerleştir", statusWait: "Rakip bekleniyor",
+    statusFire: "Rakip tahtaya tıklayarak ateş et", statusOpp: "Rakibin sırası...", 
+    win: "Kazandın!", lose: "Kaybettin", winSub: "Tebrikler, tüm düşman gemilerini batırdın!", loseSub: "Tüm gemilerin battı...",
+    sunkShip: "Bir gemi batırdın!", hitAgain: "İsabet! Tekrar ateş et", miss: "Iska!",
+    oppHit: "Rakip isabet etti!", oppMiss: "Rakip ıskaladı!", oppSunk: "Bir gemin battı!",
+    yourTurn: "Senin Sıran", oppTurn: " oynuyor", oppDisc: "⚠️ Rakip bağlantısı koptu.", discWait: "Bağlantı Koptu",
+    readyOpp: "Rakip hazır!"
+  },
+  en: {
+    welcome: "Welcome matey", nickname: "Nickname", nicknamePh: "Enter your name...", createRoom: "Create Room",
+    roomCodeLabel: "Room Code", waitingOpponent: "Waiting for opponent...", or: "or", join: "Join",
+    rematch: "Rematch", myFleet: "Your Fleet", oppFleet: "Enemy Fleet", hits: "Hits",
+    misses: "Misses", accuracy: "Accuracy", time: "Time", reset: "Reset", random: "Random",
+    ready: "Ready", adjHint: "Adj Hint", sound: "Sound", chat: "Chat",
+    statusPlace: "Place Your Ships", statusWait: "Waiting for opponent",
+    statusFire: "Click enemy board to fire", statusOpp: "Opponent's turn...", 
+    win: "You Won!", lose: "You Lost", winSub: "Congratulations, you sank all enemy ships!", loseSub: "All your ships sank...",
+    sunkShip: "You sank a ship!", hitAgain: "Hit! Fire again", miss: "Miss!",
+    oppHit: "Opponent hit!", oppMiss: "Opponent missed!", oppSunk: "Your ship sank!",
+    yourTurn: "Your Turn", oppTurn: " is playing", oppDisc: "⚠️ Opponent disconnected.", discWait: "Disconnected",
+    readyOpp: "Opponent is ready!"
+  }
+};
+let lang = 'tr';
+function setLang(l) {
+  lang = l;
+  $('btn-lang-tr').classList.toggle('active', l === 'tr'); $('btn-lang-en').classList.toggle('active', l === 'en');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = texts[l][el.dataset.i18n]; });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = texts[l][el.dataset.i18nPlaceholder]; });
+  if (phase === 'placement') turnStatus.innerHTML = '<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
+  else if (phase === 'battle') turnStatus.textContent = isMyTurn ? texts[lang].yourTurn : `${opponentNick}${texts[lang].oppTurn}`;
+}
+$('btn-lang-tr').addEventListener('click', () => setLang('tr'));
+$('btn-lang-en').addEventListener('click', () => setLang('en'));
 
 const $=id=>document.getElementById(id);
 const turnStatus=$('turn-status'), statusMsg=$('status-msg'), shipDock=$('ship-dock');
@@ -80,9 +150,23 @@ function rebuildMyBoard(){
 }
 
 // ═══ LOBBY ═══
+document.querySelectorAll('.avatar-option').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    myAvatar = el.dataset.avatar;
+  });
+});
+
+$('btn-sound').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  $('btn-sound').classList.toggle('active', soundEnabled);
+  $('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
+});
+
 $('btn-create').addEventListener('click',()=>{
   myNick=($('nickname-input').value.trim()||'Oyuncu');
-  socket.emit('create-room',{nickname:myNick},(res)=>{
+  socket.emit('create-room',{nickname:myNick, avatar:myAvatar},(res)=>{
     if(res.success){
       roomCode=res.code;playerIndex=res.playerIndex;
       $('room-code-display').textContent=roomCode;
@@ -115,7 +199,7 @@ $('btn-join').addEventListener('click',()=>{
   const code=$('code-input').value.trim().toUpperCase();
   if(code.length!==5){$('lobby-error').textContent='5 haneli kod girin.';return}
   myNick=($('nickname-input').value.trim()||'Oyuncu');
-  socket.emit('join-room',{code,nickname:myNick},(res)=>{
+  socket.emit('join-room',{code,nickname:myNick, avatar:myAvatar},(res)=>{
     if(res.success){roomCode=res.code;playerIndex=res.playerIndex;$('lobby-error').textContent=''}
     else $('lobby-error').textContent=res.error;
   });
@@ -131,7 +215,7 @@ $('btn-join').addEventListener('click',()=>{
     history.replaceState(null,'',location.pathname);
     // Show a subtle hint
     $('lobby-error').style.color='var(--blue)';
-    $('lobby-error').textContent='Davet linki algılandı — adını gir ve Katıl\'a bas!';
+    $('lobby-error').textContent=lang === 'en' ? "Invite link detected — enter your name and Join!" : "Davet linki algılandı — adını gir ve Katıl'a bas!";
   }
 })();
 
@@ -403,7 +487,7 @@ $('btn-reset').addEventListener('click',()=>{placedShips=[];resetBoards();btnRea
 btnReady.addEventListener('click',()=>{
   const data=placedShips.map(s=>({x:s.x,y:s.y,size:s.size,name:s.name,horizontal:s.horizontal}));
   socket.emit('place-ships',data,res=>{
-    if(res.success){shipDock.classList.remove('visible');setStatus('Rakip gemilerini yerleştiriyor...',false)}
+    if(res.success){shipDock.classList.remove('visible');setStatus(texts[lang].statusWait,false)}
     else setStatus(res.error,false);
   });
 });
@@ -415,15 +499,16 @@ function handleOppGridClick(x,y){
     if(!res.success){setStatus(res.error,false);return}
     myShots[y][x]=res.hit?2:1;
     animateHit('opp-grid',x,y,res.hit);
+    playSound(res.hit ? (res.sunkShip ? 'sunk' : 'hit') : 'miss');
     if(res.sunkShip){
       sunkOppShips.push(res.sunkShip);
       setTimeout(()=>animateSinking('opp-grid',res.sunkShip),200);
-      setStatus(`Bir gemi batırdın!`,true);updateFleetStatus('opp-fleet',sunkOppShips);
-    } else setStatus(res.hit?'İsabet! Tekrar ateş et':'Iska!',res.hit);
+      setStatus(texts[lang].sunkShip,true);updateFleetStatus('opp-fleet',sunkOppShips);
+    } else setStatus(res.hit?texts[lang].hitAgain:texts[lang].miss,res.hit);
     if(!res.gameOver){
       isMyTurn=res.currentTurn===playerIndex;
-      turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
-      if(!isMyTurn)setTimeout(()=>setStatus('Rakibin sırası...',false),800);
+      turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
+      if(!isMyTurn)setTimeout(()=>setStatus(texts[lang].statusOpp,false),800);
       updateBoardGlow();
     }
     renderOppBoard();applyAdjHints();
@@ -479,10 +564,11 @@ socket.on('phase-change',data=>{
     setStatus('',false);
   }
   if(phase==='battle'){
+    playSound('start');
     if(data.players)setPlayerInfo(data.players);
     isMyTurn=data.currentTurn===playerIndex;
-    turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
-    setStatus(isMyTurn?'Rakip tahtaya tıklayarak ateş et':'Rakibin sırası...',isMyTurn);
+    turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
+    setStatus(isMyTurn?texts[lang].statusFire:texts[lang].statusOpp,isMyTurn);
     shipDock.classList.remove('visible');
     chatPanel.classList.add('visible');
     $('battle-helpers').style.display='flex';
@@ -494,21 +580,22 @@ socket.on('phase-change',data=>{
   }
 });
 
-socket.on('opponent-ready',()=>setStatus('Rakip hazır!',false));
+socket.on('opponent-ready',()=>setStatus(texts[lang].readyOpp,false));
 
 socket.on('opponent-fired',data=>{
   myHitsReceived[data.y][data.x]=data.hit?2:1;
   animateHit('my-grid',data.x,data.y,data.hit);
+  playSound(data.hit ? (data.sunkShip ? 'sunk' : 'hit') : 'miss');
   if(data.sunkShip){
     for(const s of placedShips)if(s.x===data.sunkShip.x&&s.y===data.sunkShip.y&&s.size===data.sunkShip.size)s.sunk=true;
     setTimeout(()=>animateSinking('my-grid',data.sunkShip),200);
-    setStatus(`Bir gemin battı!`,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk));
-  } else setStatus(data.hit?'Rakip isabet etti!':'Rakip ıskaladı!',false);
+    setStatus(texts[lang].oppSunk,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk));
+  } else setStatus(data.hit?texts[lang].oppHit:texts[lang].oppMiss,false);
   renderMyBoard();
   if(!data.gameOver){
     isMyTurn=data.currentTurn===playerIndex;
-    turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
-    if(isMyTurn)setTimeout(()=>setStatus('Senin sıran!',true),600);
+    turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
+    if(isMyTurn)setTimeout(()=>setStatus(texts[lang].yourTurn+'!',true),600);
     renderOppBoard();updateBoardGlow();
   }
 });
@@ -531,9 +618,9 @@ socket.on('game-over',data=>{
   $('ig-stat-accuracy').textContent=accuracy+'%';
   $('ig-stat-time').textContent=mm+':'+ss;
   $('go-icon').textContent=won?'🏆':'💀';
-  $('go-title').textContent=won?'Kazandın!':'Kaybettin';
+  $('go-title').textContent=won?texts[lang].win:texts[lang].lose;
   $('go-title').className='game-over-title '+(won?'win':'lose');
-  $('go-sub').textContent=won?'Tebrikler, tüm düşman gemilerini batırdın!':'Tüm gemilerin battı...';
+  $('go-sub').textContent=won?texts[lang].winSub:texts[lang].loseSub;
   
   // Reveal opponent unhit ships
   if (data.ships) {
@@ -618,10 +705,10 @@ function applyAdjHints(){
     }
   }
 }
-socket.on('opponent-disconnected',()=>{setStatus('⚠️ Rakip bağlantısı koptu.',false);turnStatus.textContent='Bağlantı Koptu'});
+socket.on('opponent-disconnected',()=>{setStatus(texts[lang].oppDisc,false);turnStatus.textContent=texts[lang].discWait});
 
 function setPlayerInfo(players){
-  $('p1-name').textContent=players[0].nickname;$('p1-avatar').textContent=players[0].nickname[0].toUpperCase();
-  $('p2-name').textContent=players[1].nickname;$('p2-avatar').textContent=players[1].nickname[0].toUpperCase();
+  $('p1-name').textContent=players[0].nickname;$('p1-avatar').textContent=players[0].avatar || players[0].nickname[0].toUpperCase();
+  $('p2-name').textContent=players[1].nickname;$('p2-avatar').textContent=players[1].avatar || players[1].nickname[0].toUpperCase();
   opponentNick=playerIndex===0?players[1].nickname:players[0].nickname;
 }
