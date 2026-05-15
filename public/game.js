@@ -31,21 +31,17 @@ function playSound(type) {
     gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.3, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
     osc.start(t); osc.stop(t + 0.08);
   } else if (type === 'hit') {
-    osc.type = 'square'; osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
-    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.4, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 400;
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.15);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.8, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(800, t); filter.frequency.exponentialRampToValueAtTime(100, t + 0.1);
     osc.disconnect(); osc.connect(filter); filter.connect(gain);
-    osc.start(t); osc.stop(t + 0.1);
+    osc.start(t); osc.stop(t + 0.15);
   } else if (type === 'sunk') {
-    osc.type = 'square'; osc.frequency.setValueAtTime(120, t); osc.frequency.exponentialRampToValueAtTime(20, t + 0.2);
-    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.5, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 300;
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.25);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(1, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(600, t); filter.frequency.exponentialRampToValueAtTime(50, t + 0.2);
     osc.disconnect(); osc.connect(filter); filter.connect(gain);
-    osc.start(t); osc.stop(t + 0.2);
-  } else if (type === 'start') {
-    osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
-    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.4, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
-    osc.start(t); osc.stop(t + 0.4);
+    osc.start(t); osc.stop(t + 0.25);
   }
 }
 
@@ -576,7 +572,6 @@ socket.on('phase-change',data=>{
     setStatus('',false);
   }
   if(phase==='battle'){
-    playSound('start');
     if(data.players)setPlayerInfo(data.players);
     isMyTurn=data.currentTurn===playerIndex;
     turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
