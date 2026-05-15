@@ -177,17 +177,17 @@ function buildDockShips(){
 
 function getCellSize(){const c=getCell('my-grid',0,0);return c?c.offsetWidth:36}
 
-function createGhost(size){
+function createGhost(size, horiz){
   const g=document.createElement('div');g.className='drag-ghost';
   const cs=getCellSize();
   for(let i=0;i<size;i++){const b=document.createElement('div');b.style.width=cs+'px';b.style.height=cs+'px';g.appendChild(b)}
-  g.style.flexDirection=isHorizontal?'row':'column';
+  g.style.flexDirection=(horiz!==undefined?horiz:dragHorizontal)?'row':'column';
   document.body.appendChild(g);return g;
 }
 
 function startDockDrag(idx,cx,cy,e){
   if(placedShips.find(s=>s._dockIdx===idx))return;e.preventDefault();
-  const ghost=createGhost(shipDefs[idx].size);
+  const ghost=createGhost(shipDefs[idx].size,dragHorizontal);
   ghost.style.left=(cx-getCellSize()/2)+'px';ghost.style.top=(cy-getCellSize()/2)+'px';
   dragState={shipIdx:idx,ghost,size:shipDefs[idx].size,name:shipDefs[idx].name,fromBoard:false,horiz:dragHorizontal};
   document.addEventListener('mousemove',onDragMove);document.addEventListener('mouseup',onDragEnd);
@@ -201,10 +201,9 @@ function startBoardDrag(shipIdx,cx,cy,e){
   dragHorizontal=s.horizontal;
   boardDragState={shipIdx,origX:s.x,origY:s.y,origH:s.horizontal};
   removePlacedShip(shipIdx);
-  const ghost=createGhost(s.size);
-  ghost.style.flexDirection=dragHorizontal?'row':'column';
+  const ghost=createGhost(s.size,s.horizontal);
   ghost.style.left=(cx-getCellSize()/2)+'px';ghost.style.top=(cy-getCellSize()/2)+'px';
-  dragState={shipIdx:s._dockIdx,ghost,size:s.size,name:s.name,fromBoard:true,boardIdx:shipIdx,orig:boardDragState,horiz:dragHorizontal};
+  dragState={shipIdx:s._dockIdx,ghost,size:s.size,name:s.name,fromBoard:true,boardIdx:shipIdx,orig:boardDragState,horiz:s.horizontal};
   document.addEventListener('mousemove',onDragMove);document.addEventListener('mouseup',onDragEnd);
   document.addEventListener('touchmove',onDragMoveT,{passive:false});document.addEventListener('touchend',onDragEndT);
 }
@@ -358,7 +357,8 @@ function rotateShipOnBoard(idx){
 
 // ═══ RANDOM PLACEMENT ═══
 function placeShipsRandomly(){
-  placedShips=[];rebuildMyBoard();
+  // Clear all placed ships first
+  placedShips=[];rebuildMyBoard();updateDockMarks();btnReady.disabled=true;
   for(let di=0;di<shipDefs.length;di++){
     const {size,name}=shipDefs[di];
     let placed=false;
@@ -367,12 +367,14 @@ function placeShipsRandomly(){
       const x=Math.floor(Math.random()*(horiz?B-size+1:B));
       const y=Math.floor(Math.random()*(horiz?B:B-size+1));
       if(canPlace(x,y,size,horiz,-1)){
-        addShip(x,y,size,name,horiz,di);
+        placedShips.push({x,y,size,name,horizontal:horiz,_dockIdx:di});
+        rebuildMyBoard();
         placed=true;
       }
     }
   }
-  renderMyBoard();
+  renderMyBoard();updateDockMarks();
+  if(placedShips.length>=shipDefs.length)btnReady.disabled=false;
 }
 $('btn-random').addEventListener('click',placeShipsRandomly);
 
