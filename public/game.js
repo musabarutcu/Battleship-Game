@@ -83,9 +83,34 @@ function rebuildMyBoard(){
 $('btn-create').addEventListener('click',()=>{
   myNick=($('nickname-input').value.trim()||'Oyuncu');
   socket.emit('create-room',{nickname:myNick},(res)=>{
-    if(res.success){roomCode=res.code;playerIndex=res.playerIndex;$('room-code-display').textContent=roomCode;$('waiting-section').classList.add('visible');$('lobby-error').textContent=''}
+    if(res.success){
+      roomCode=res.code;playerIndex=res.playerIndex;
+      $('room-code-display').textContent=roomCode;
+      $('waiting-section').classList.add('visible');
+      $('lobby-error').textContent='';
+      // Build invite link
+      const url=`${location.origin}${location.pathname}?join=${roomCode}`;
+      $('invite-link-input').value=url;
+    }
   });
 });
+
+$('btn-copy-link').addEventListener('click',()=>{
+  const val=$('invite-link-input').value;
+  if(!val)return;
+  navigator.clipboard.writeText(val).then(()=>{
+    const c=$('copy-confirm');
+    c.classList.add('visible');
+    setTimeout(()=>c.classList.remove('visible'),2000);
+  }).catch(()=>{
+    $('invite-link-input').select();
+    document.execCommand('copy');
+    const c=$('copy-confirm');
+    c.classList.add('visible');
+    setTimeout(()=>c.classList.remove('visible'),2000);
+  });
+});
+
 $('btn-join').addEventListener('click',()=>{
   const code=$('code-input').value.trim().toUpperCase();
   if(code.length!==5){$('lobby-error').textContent='5 haneli kod girin.';return}
@@ -95,6 +120,20 @@ $('btn-join').addEventListener('click',()=>{
     else $('lobby-error').textContent=res.error;
   });
 });
+
+// ═══ AUTO-JOIN FROM URL ═══
+(function(){
+  const params=new URLSearchParams(location.search);
+  const joinCode=params.get('join');
+  if(joinCode&&joinCode.length===5){
+    $('code-input').value=joinCode.toUpperCase();
+    // Clean URL without reload
+    history.replaceState(null,'',location.pathname);
+    // Show a subtle hint
+    $('lobby-error').style.color='var(--blue)';
+    $('lobby-error').textContent='Davet linki algılandı — adını gir ve Katıl\'a bas!';
+  }
+})();
 
 // ═══ SHIP PLACEMENT ═══
 let dragState=null, boardDragState=null;
