@@ -26,22 +26,26 @@ function playSound(type) {
   const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
   osc.connect(gain); gain.connect(audioCtx.destination);
   const t = audioCtx.currentTime;
-  if (type === 'hit') {
-    osc.type = 'square'; osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(40, t + 0.2);
-    gain.gain.setValueAtTime(0.3, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-    osc.start(); osc.stop(t + 0.2);
-  } else if (type === 'miss') {
-    osc.type = 'sine'; osc.frequency.setValueAtTime(300, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
-    gain.gain.setValueAtTime(0.2, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-    osc.start(); osc.stop(t + 0.1);
+  if (type === 'miss') {
+    osc.type = 'sine'; osc.frequency.setValueAtTime(400, t); osc.frequency.exponentialRampToValueAtTime(600, t + 0.05);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.3, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+    osc.start(t); osc.stop(t + 0.08);
+  } else if (type === 'hit') {
+    osc.type = 'square'; osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.4, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 400;
+    osc.disconnect(); osc.connect(filter); filter.connect(gain);
+    osc.start(t); osc.stop(t + 0.1);
   } else if (type === 'sunk') {
-    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, t); osc.frequency.linearRampToValueAtTime(50, t + 0.5);
-    gain.gain.setValueAtTime(0.3, t); gain.gain.linearRampToValueAtTime(0.01, t + 0.5);
-    osc.start(); osc.stop(t + 0.5);
+    osc.type = 'square'; osc.frequency.setValueAtTime(120, t); osc.frequency.exponentialRampToValueAtTime(20, t + 0.2);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.5, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 300;
+    osc.disconnect(); osc.connect(filter); filter.connect(gain);
+    osc.start(t); osc.stop(t + 0.2);
   } else if (type === 'start') {
-    osc.type = 'triangle'; osc.frequency.setValueAtTime(400, t); osc.frequency.setValueAtTime(600, t + 0.1);
-    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.2, t + 0.05); gain.gain.linearRampToValueAtTime(0, t + 0.2);
-    osc.start(); osc.stop(t + 0.2);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(800, t);
+    gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(0.4, t + 0.01); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    osc.start(t); osc.stop(t + 0.4);
   }
 }
 
@@ -59,7 +63,7 @@ const texts = {
     sunkShip: "Bir gemi batırdın!", hitAgain: "İsabet! Tekrar ateş et", miss: "Iska!",
     oppHit: "Rakip isabet etti!", oppMiss: "Rakip ıskaladı!", oppSunk: "Bir gemin battı!",
     yourTurn: "Senin Sıran", oppTurn: " oynuyor", oppDisc: "⚠️ Rakip bağlantısı koptu.", discWait: "Bağlantı Koptu",
-    readyOpp: "Rakip hazır!"
+    readyOpp: "Rakip hazır!", roomLabel: "Oda: "
   },
   en: {
     welcome: "Welcome matey", nickname: "Nickname", nicknamePh: "Enter your name...", createRoom: "Create Room",
@@ -73,7 +77,7 @@ const texts = {
     sunkShip: "You sank a ship!", hitAgain: "Hit! Fire again", miss: "Miss!",
     oppHit: "Opponent hit!", oppMiss: "Opponent missed!", oppSunk: "Your ship sank!",
     yourTurn: "Your Turn", oppTurn: " is playing", oppDisc: "⚠️ Opponent disconnected.", discWait: "Disconnected",
-    readyOpp: "Opponent is ready!"
+    readyOpp: "Opponent is ready!", roomLabel: "Room: "
   }
 };
 let lang = 'tr';
@@ -84,6 +88,14 @@ function setLang(l) {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = texts[l][el.dataset.i18nPlaceholder]; });
   if (phase === 'placement') turnStatus.innerHTML = '<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
   else if (phase === 'battle') turnStatus.textContent = isMyTurn ? texts[lang].yourTurn : `${opponentNick}${texts[lang].oppTurn}`;
+
+  if ($('room-code-small').textContent) $('room-code-small').textContent = texts[lang].roomLabel + roomCode;
+  
+  const currentMsg = statusMsg.textContent;
+  let foundKey = null;
+  for (const k in texts['tr']) { if (texts['tr'][k] === currentMsg) foundKey = k; }
+  for (const k in texts['en']) { if (texts['en'][k] === currentMsg) foundKey = k; }
+  if (foundKey) statusMsg.textContent = texts[lang][foundKey];
 }
 $('btn-lang-tr').addEventListener('click', () => setLang('tr'));
 $('btn-lang-en').addEventListener('click', () => setLang('en'));
@@ -558,7 +570,7 @@ socket.on('phase-change',data=>{
     shipDefs=data.ships;    if(data.players)setPlayerInfo(data.players);
     showScreen('game-screen');buildGrid('my-grid',handleMyGridClick);buildGrid('opp-grid',handleOppGridClick);
     setupBoardInteraction();initPlacement();
-    $('room-code-small').textContent=`Oda: ${roomCode}`;
+    $('room-code-small').textContent=texts[lang].roomLabel + roomCode;
     turnStatus.innerHTML='<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
     $('in-game-stats').style.display='none';
     setStatus('',false);
