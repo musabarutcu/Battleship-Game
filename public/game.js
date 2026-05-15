@@ -62,7 +62,7 @@ const texts = {
     readyOpp: "Rakip hazır!", roomLabel: "Oda: "
   },
   en: {
-    welcome: "Welcome matey", nickname: "Nickname", nicknamePh: "Enter your name...", createRoom: "Create Room",
+    welcome: "Welcome darling", nickname: "Nickname", nicknamePh: "Enter your name...", createRoom: "Create Room",
     roomCodeLabel: "Room Code", waitingOpponent: "Waiting for opponent...", or: "or", join: "Join",
     rematch: "Rematch", myFleet: "Your Fleet", oppFleet: "Enemy Fleet", hits: "Hits",
     misses: "Misses", accuracy: "Accuracy", time: "Time", reset: "Reset", random: "Random",
