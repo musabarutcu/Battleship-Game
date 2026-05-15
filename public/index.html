@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amiral Battı — Multiplayer</title>
-  <meta name="description" content="Arkadaşlarınla gerçek zamanlı Amiral Battı oyna">
+  <title>Gemileri Batır — Multiplayer</title>
+  <meta name="description" content="Arkadaşlarınla gerçek zamanlı Gemileri Batır oyna">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
   <div id="lobby-screen" class="screen active">
     <div class="lobby-card">
       <div class="lobby-logo">⚓</div>
-      <h1 class="lobby-title">Amiral Battı</h1>
+      <h1 class="lobby-title">Gemileri Batır</h1>
       <p class="lobby-subtitle">Arkadaşınla gerçek zamanlı oyna</p>
       <div class="input-group">
         <label for="nickname-input">Takma Ad</label>
@@ -56,6 +56,9 @@
     </div>
 
     <div class="game-content">
+      <div id="rematch-container" style="display:none; text-align:center; width:100%; margin-bottom:12px;">
+        <button class="btn btn-primary" id="btn-rematch-top" style="font-size: 1.1rem; padding: 12px 32px; border-radius: 30px;">Yeniden Oyna</button>
+      </div>
       <div class="status-msg" id="status-msg"></div>
       <div class="mobile-tabs" id="mobile-tabs">
         <button class="active" data-tab="my">Kendi Filon</button>
@@ -111,7 +114,7 @@
       <div class="game-over-icon" id="go-icon">🏆</div>
       <div class="game-over-title" id="go-title">Kazandın!</div>
       <div class="game-over-sub" id="go-sub">Tebrikler!</div>
-      <button class="btn btn-primary" id="btn-rematch">Tekrar Oyna</button>
+      <div class="go-progress-bar"><div class="go-progress-fill"></div></div>
     </div>
   </div>
 </div>

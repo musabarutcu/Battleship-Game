@@ -89,7 +89,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .board-with-fleet{display:flex;gap:6px;align-items:flex-start}
 
 /* Board Panel */
-.board-panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:14px;flex:0 0 auto;transition:box-shadow .4s ease}
+.board-panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-md);padding:14px;flex:0 0 auto;transition:all .4s ease;display:flex;flex-direction:column;align-items:center}
+.board-panel.active-turn-glow{box-shadow:0 0 0 3px var(--blue), 0 0 24px rgba(16,117,171,0.3);transform:translateY(-2px)}
 .board-panel.glow{box-shadow:0 0 24px rgba(16,117,171,0.15),var(--shadow-md)}
 .board-panel-title{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--navy-mid);margin-bottom:10px;text-align:center}
 
@@ -173,6 +174,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .game-over-title.win{color:#16a34a}
 .game-over-title.lose{color:var(--hit)}
 .game-over-sub{color:var(--text-muted);margin-bottom:24px;font-size:0.9rem}
+
+/* Game Over Progress */
+.go-progress-bar{width:100%;height:6px;background:var(--border);border-radius:10px;overflow:hidden;margin-top:10px}
+.go-progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--navy));width:100%;animation:shrink 3s linear forwards}
+@keyframes shrink{from{width:100%}to{width:0%}}
 .game-over-card .btn{margin-top:8px}
 
 /* ═══ RESPONSIVE ═══ */

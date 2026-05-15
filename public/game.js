@@ -332,7 +332,7 @@ function handleOppGridClick(x,y){
   socket.emit('fire',{x,y},res=>{
     if(!res.success){setStatus(res.error,false);return}
     myShots[y][x]=res.hit?2:1;
-    if(res.sunkShip){sunkOppShips.push(res.sunkShip);setStatus(`${res.sunkShip.name} battı! 🔥`,true);updateFleetStatus('opp-fleet',sunkOppShips)}
+    if(res.sunkShip){sunkOppShips.push(res.sunkShip);setStatus(`Bir gemi batırdın!`,true);updateFleetStatus('opp-fleet',sunkOppShips)}
     else setStatus(res.hit?'İsabet! Tekrar ateş et 🎯':'Iska!',res.hit);
     if(!res.gameOver){
       isMyTurn=res.currentTurn===playerIndex;
@@ -345,7 +345,9 @@ function handleOppGridClick(x,y){
 }
 
 function updateBoardGlow(){
-  $('opp-board-panel').classList.toggle('glow',phase==='battle'&&isMyTurn);
+  $('my-board-panel').classList.toggle('active-turn-glow',phase==='battle'&&isMyTurn);
+  $('opp-board-panel').classList.toggle('active-turn-glow',phase==='battle'&&!isMyTurn);
+  $('opp-board-panel').classList.remove('glow');
   $('my-board-panel').classList.remove('glow');
 }
 
@@ -405,7 +407,7 @@ socket.on('opponent-ready',()=>setStatus('Rakip hazır!',false));
 
 socket.on('opponent-fired',data=>{
   myHitsReceived[data.y][data.x]=data.hit?2:1;
-  if(data.sunkShip){for(const s of placedShips)if(s.x===data.sunkShip.x&&s.y===data.sunkShip.y&&s.size===data.sunkShip.size)s.sunk=true;setStatus(`${data.sunkShip.name} gemin battı! 💀`,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk))}
+  if(data.sunkShip){for(const s of placedShips)if(s.x===data.sunkShip.x&&s.y===data.sunkShip.y&&s.size===data.sunkShip.size)s.sunk=true;setStatus(`Bir gemin battı!`,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk))}
   else setStatus(data.hit?'Rakip isabet etti!':'Rakip ıskaladı!',false);
   renderMyBoard();
   if(!data.gameOver){
@@ -423,9 +425,16 @@ socket.on('game-over',data=>{
   $('go-title').className='game-over-title '+(won?'win':'lose');
   $('go-sub').textContent=won?'Tebrikler, tüm düşman gemilerini batırdın!':'Tüm gemilerin battı...';
   gameOverOverlay.classList.add('visible');
+  setTimeout(()=>{
+    gameOverOverlay.classList.remove('visible');
+    $('rematch-container').style.display = 'block';
+  }, 3000);
 });
 
-$('btn-rematch').addEventListener('click',()=>{gameOverOverlay.classList.remove('visible');resetBoards();sunkOppShips.length=0;socket.emit('rematch')});
+$('btn-rematch-top').addEventListener('click',()=>{
+  $('rematch-container').style.display = 'none';
+  resetBoards();sunkOppShips.length=0;socket.emit('rematch');
+});
 socket.on('opponent-disconnected',()=>{setStatus('⚠️ Rakip bağlantısı koptu.',false);turnStatus.textContent='Bağlantı Koptu'});
 
 function setPlayerInfo(players){
