@@ -61,6 +61,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .waiting-dots::after{content:'';animation:dots 1.5s steps(4) infinite}
 @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
 
+/* Waiting Anchor */
+@keyframes anchorBob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-10px) rotate(6deg)}}
+.waiting-anchor-img{width:56px;height:56px;object-fit:contain;display:block;margin:12px auto 8px;animation:anchorBob 2.2s ease-in-out infinite}
+
 /* Invite Link */
 .invite-link-row{display:flex;gap:6px;margin:10px 0 4px;align-items:center}
 .invite-link-input{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.72rem;font-family:inherit;color:var(--text-muted);background:var(--bg);outline:none;min-width:0;cursor:text}
@@ -103,7 +107,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .board-panel-title{font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--navy-mid);margin-bottom:10px;text-align:center}
 
 /* Grid */
-.board-grid{display:inline-grid;grid-template-columns:28px repeat(10,36px);grid-template-rows:28px repeat(10,36px);gap:2px}
+.board-grid{display:inline-grid;grid-template-columns:28px repeat(10,36px);grid-template-rows:28px repeat(10,36px);gap:2px;
+  background:linear-gradient(135deg,#c8dff5,#d9ecff,#b8d4ee,#cce4f7,#c8dff5);background-size:400% 400%;
+  animation:waterWave 10s ease infinite;border-radius:8px;padding:2px}
+@keyframes waterWave{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 .grid-header{display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--navy)}
 .grid-cell{width:36px;height:36px;background:var(--water);border:1.5px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:default;position:relative;transition:all .15s;user-select:none}
 .grid-cell.ship{background:var(--navy-dark);border-color:var(--navy-darkest)}
@@ -122,6 +129,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .grid-cell.target:hover{background:rgba(16,117,171,0.18);border-color:var(--blue)}
 .grid-cell.adj-hint::after{content:'✕';font-size:14px;font-weight:800;color:rgba(239,68,68,0.45)}
 .grid-cell.adj-hint{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25)}
+
+/* ═══ HIT EXPLOSION ═══ */
+@keyframes hitPulse{0%{transform:scale(0.2);opacity:1}60%{transform:scale(1.5);opacity:0.7}100%{transform:scale(1);opacity:1}}
+@keyframes missDrop{0%{transform:translateY(-6px) scale(0.5);opacity:0}80%{transform:translateY(2px) scale(1.1)}100%{transform:translateY(0) scale(1);opacity:1}}
+.grid-cell.hit-new::after{animation:hitPulse 0.45s cubic-bezier(0.25,0.46,0.45,0.94) forwards}
+.grid-cell.miss-new::after{animation:missDrop 0.35s ease forwards}
+
+/* ═══ SINKING CASCADE ═══ */
+@keyframes sinkCell{0%{background:#ef4444;transform:scale(1.15)}40%{background:#b91c1c;transform:scale(1.05)}100%{background:var(--sunk-bg);transform:scale(1)}}
+.grid-cell.sinking{animation:sinkCell 0.6s ease forwards;z-index:2}
 
 /* ═══ FLEET STATUS (sidebar) ═══ */
 .fleet-status{display:none;flex-direction:column;gap:8px;padding-top:34px;min-width:32px;align-items:center}
@@ -193,7 +210,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .game-over-title{font-size:1.6rem;font-weight:800;margin-bottom:8px}
 .game-over-title.win{color:#16a34a}
 .game-over-title.lose{color:var(--hit)}
-.game-over-sub{color:var(--text-muted);margin-bottom:24px;font-size:0.9rem}
+.game-over-sub{color:var(--text-muted);margin-bottom:16px;font-size:0.9rem}
+
+/* Game Over Stats */
+.go-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 16px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)}
+.go-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.go-stat-val{font-size:1.3rem;font-weight:800;color:var(--navy)}
+.go-stat-lbl{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted)}
 
 /* Game Over Progress */
 .go-progress-bar{width:100%;height:6px;background:var(--border);border-radius:10px;overflow:hidden;margin-top:10px}

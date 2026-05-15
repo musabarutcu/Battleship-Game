@@ -2,7 +2,7 @@ const socket = io({ transports: ['websocket'] });
 const B = 10, COLS = 'ABCDEFGHIJ'.split('');
 let playerIndex = -1, roomCode = '', phase = 'lobby', isMyTurn = false;
 let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', myNick = '';
-let adjHintEnabled = true;
+let adjHintEnabled = true, gameStartTime = null;
 let myBoard = [], myShots = [], myHitsReceived = [];
 const sunkOppShips = [];
 
@@ -276,6 +276,26 @@ function clearPreviews(){for(let r=0;r<B;r++)for(let c=0;c<B;c++)getCell('my-gri
 
 function shakeBoard(){$('my-board-panel').classList.add('shake');setTimeout(()=>$('my-board-panel').classList.remove('shake'),400)}
 
+// ═══ PREMIUM ANIMATIONS ═══
+function animateHit(gridId, x, y, isHit){
+  const cell=getCell(gridId,x,y);
+  if(!cell)return;
+  cell.classList.add(isHit?'hit-new':'miss-new');
+  setTimeout(()=>{cell.classList.remove('hit-new','miss-new')},500);
+}
+
+function animateSinking(gridId, ship){
+  const cells=shipCells(ship);
+  cells.forEach(([cx,cy],i)=>{
+    setTimeout(()=>{
+      const cell=getCell(gridId,cx,cy);
+      if(!cell)return;
+      cell.classList.add('sinking');
+      setTimeout(()=>cell.classList.remove('sinking'),700);
+    },i*130);
+  });
+}
+
 // Click on placed ship to rotate
 function getShipAt(x,y){for(let i=0;i<placedShips.length;i++){const s=placedShips[i];for(let j=0;j<s.size;j++){const cx=s.horizontal?s.x+j:s.x,cy=s.horizontal?s.y:s.y+j;if(cx===x&&cy===y)return i}}return-1}
 
@@ -394,8 +414,12 @@ function handleOppGridClick(x,y){
   socket.emit('fire',{x,y},res=>{
     if(!res.success){setStatus(res.error,false);return}
     myShots[y][x]=res.hit?2:1;
-    if(res.sunkShip){sunkOppShips.push(res.sunkShip);setStatus(`Bir gemi batırdın!`,true);updateFleetStatus('opp-fleet',sunkOppShips)}
-    else setStatus(res.hit?'İsabet! Tekrar ateş et':'Iska!',res.hit);
+    animateHit('opp-grid',x,y,res.hit);
+    if(res.sunkShip){
+      sunkOppShips.push(res.sunkShip);
+      setTimeout(()=>animateSinking('opp-grid',res.sunkShip),200);
+      setStatus(`Bir gemi batırdın!`,true);updateFleetStatus('opp-fleet',sunkOppShips);
+    } else setStatus(res.hit?'İsabet! Tekrar ateş et':'Iska!',res.hit);
     if(!res.gameOver){
       isMyTurn=res.currentTurn===playerIndex;
       turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
@@ -463,6 +487,7 @@ socket.on('phase-change',data=>{
     $('battle-helpers').style.display='flex';
     buildFleetStatus('my-fleet',shipDefs);buildFleetStatus('opp-fleet',shipDefs);
     $('my-fleet').classList.add('visible');$('opp-fleet').classList.add('visible');
+    gameStartTime=Date.now();
     renderOppBoard();updateBoardGlow();
     if(window.innerWidth<=860)$('mobile-tabs').querySelectorAll('button')[1].click();
   }
@@ -472,8 +497,12 @@ socket.on('opponent-ready',()=>setStatus('Rakip hazır!',false));
 
 socket.on('opponent-fired',data=>{
   myHitsReceived[data.y][data.x]=data.hit?2:1;
-  if(data.sunkShip){for(const s of placedShips)if(s.x===data.sunkShip.x&&s.y===data.sunkShip.y&&s.size===data.sunkShip.size)s.sunk=true;setStatus(`Bir gemin battı!`,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk))}
-  else setStatus(data.hit?'Rakip isabet etti!':'Rakip ıskaladı!',false);
+  animateHit('my-grid',data.x,data.y,data.hit);
+  if(data.sunkShip){
+    for(const s of placedShips)if(s.x===data.sunkShip.x&&s.y===data.sunkShip.y&&s.size===data.sunkShip.size)s.sunk=true;
+    setTimeout(()=>animateSinking('my-grid',data.sunkShip),200);
+    setStatus(`Bir gemin battı!`,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk));
+  } else setStatus(data.hit?'Rakip isabet etti!':'Rakip ıskaladı!',false);
   renderMyBoard();
   if(!data.gameOver){
     isMyTurn=data.currentTurn===playerIndex;
@@ -485,6 +514,17 @@ socket.on('opponent-fired',data=>{
 
 socket.on('game-over',data=>{
   phase='finished';const won=data.winner===playerIndex;
+  // Calculate stats
+  let hits=0,misses=0;
+  for(let r=0;r<B;r++)for(let c=0;c<B;c++){if(myShots[r][c]===2)hits++;else if(myShots[r][c]===1)misses++;}
+  const total=hits+misses;
+  const accuracy=total>0?Math.round(hits/total*100):0;
+  const elapsed=gameStartTime?Math.floor((Date.now()-gameStartTime)/1000):0;
+  const mm=Math.floor(elapsed/60),ss=String(elapsed%60).padStart(2,'0');
+  $('stat-hits').textContent=hits;
+  $('stat-misses').textContent=misses;
+  $('stat-accuracy').textContent=accuracy+'%';
+  $('stat-time').textContent=mm+':'+ss;
   $('go-icon').textContent=won?'🏆':'💀';
   $('go-title').textContent=won?'Kazandın!':'Kaybettin';
   $('go-title').className='game-over-title '+(won?'win':'lose');
@@ -493,7 +533,7 @@ socket.on('game-over',data=>{
   setTimeout(()=>{
     gameOverOverlay.classList.remove('visible');
     $('rematch-container').style.display = 'block';
-  }, 3000);
+  }, 4500);
 });
 
 $('btn-rematch-top').addEventListener('click',()=>{
