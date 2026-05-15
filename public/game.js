@@ -629,7 +629,11 @@ socket.on('game-over',data=>{
   $('ig-stat-misses').textContent=misses;
   $('ig-stat-accuracy').textContent=accuracy+'%';
   $('ig-stat-time').textContent=mm+':'+ss;
-  $('go-icon').textContent=won?'🏆':'💀';
+  if (myAvatar.includes('.png')) {
+    $('go-icon').innerHTML = `<img src="${myAvatar}" alt="Avatar">`;
+  } else {
+    $('go-icon').textContent=won?'🏆':'💀';
+  }
   $('go-title').textContent=won?texts[lang].win:texts[lang].lose;
   $('go-title').className='game-over-title '+(won?'win':'lose');
   $('go-sub').textContent=won?texts[lang].winSub:texts[lang].loseSub;
