@@ -333,7 +333,7 @@ function handleOppGridClick(x,y){
     if(!res.success){setStatus(res.error,false);return}
     myShots[y][x]=res.hit?2:1;
     if(res.sunkShip){sunkOppShips.push(res.sunkShip);setStatus(`Bir gemi batırdın!`,true);updateFleetStatus('opp-fleet',sunkOppShips)}
-    else setStatus(res.hit?'İsabet! Tekrar ateş et 🎯':'Iska!',res.hit);
+    else setStatus(res.hit?'İsabet! Tekrar ateş et':'Iska!',res.hit);
     if(!res.gameOver){
       isMyTurn=res.currentTurn===playerIndex;
       turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
@@ -388,13 +388,14 @@ socket.on('phase-change',data=>{
     showScreen('game-screen');buildGrid('my-grid',handleMyGridClick);buildGrid('opp-grid',handleOppGridClick);
     setupBoardInteraction();initPlacement();
     $('room-code-small').textContent=`Oda: ${roomCode}`;
-    turnStatus.textContent='Gemilerini Yerleştir';setStatus('Gemileri sürükleyerek tahtana yerleştir • Tıklayarak döndür',false);
+    turnStatus.innerHTML='<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
+    setStatus('',false);
   }
   if(phase==='battle'){
     if(data.players)setPlayerInfo(data.players);
     isMyTurn=data.currentTurn===playerIndex;
     turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
-    setStatus(isMyTurn?'Rakip tahtaya tıklayarak ateş et 🎯':'Rakibin sırası...',isMyTurn);
+    setStatus(isMyTurn?'Rakip tahtaya tıklayarak ateş et':'Rakibin sırası...',isMyTurn);
     shipDock.classList.remove('visible');
     chatPanel.classList.add('visible');
     buildFleetStatus('my-fleet',shipDefs);buildFleetStatus('opp-fleet',shipDefs);
@@ -414,7 +415,7 @@ socket.on('opponent-fired',data=>{
   if(!data.gameOver){
     isMyTurn=data.currentTurn===playerIndex;
     turnStatus.textContent=isMyTurn?'Senin Sıran':`${opponentNick} oynuyor`;
-    if(isMyTurn)setTimeout(()=>setStatus('Senin sıran! 🎯',true),600);
+    if(isMyTurn)setTimeout(()=>setStatus('Senin sıran!',true),600);
     renderOppBoard();updateBoardGlow();
   }
 });
