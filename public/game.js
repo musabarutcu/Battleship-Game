@@ -25,9 +25,9 @@ function setStatus(msg,hl){statusMsg.textContent=msg;statusMsg.className='status
 function buildGrid(cid, handler){
   const c=$(cid); c.innerHTML='';
   const corner=document.createElement('div'); corner.className='grid-header'; c.appendChild(corner);
-  for(let i=0;i<B;i++){const h=document.createElement('div');h.className='grid-header';h.textContent=i+1;c.appendChild(h)}
+  for(let i=0;i<B;i++){const h=document.createElement('div');h.className='grid-header';h.textContent=COLS[i];c.appendChild(h)}
   for(let r=0;r<B;r++){
-    const rh=document.createElement('div');rh.className='grid-header';rh.textContent=COLS[r];c.appendChild(rh);
+    const rh=document.createElement('div');rh.className='grid-header';rh.textContent=r+1;c.appendChild(rh);
     for(let col=0;col<B;col++){
       const cell=document.createElement('div');cell.className='grid-cell';cell.dataset.x=col;cell.dataset.y=r;
       if(handler)cell.addEventListener('click',()=>handler(col,r));
