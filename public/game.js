@@ -1,7 +1,8 @@
 const socket = io();
 const B = 10, COLS = 'ABCDEFGHIJ'.split('');
 let playerIndex = -1, roomCode = '', phase = 'lobby', isMyTurn = false;
-let shipDefs = [], placedShips = [], isHorizontal = true, opponentNick = '', myNick = '';
+let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', myNick = '';
+let adjHintEnabled = true;
 let myBoard = [], myShots = [], myHitsReceived = [];
 const sunkOppShips = [];
 
@@ -99,9 +100,10 @@ $('btn-join').addEventListener('click',()=>{
 let dragState=null, boardDragState=null;
 
 function initPlacement(){
-  placedShips=[];sunkOppShips.length=0;isHorizontal=true;resetBoards();
+  placedShips=[];sunkOppShips.length=0;dragHorizontal=true;resetBoards();
   btnReady.disabled=true;buildDockShips();shipDock.classList.add('visible');
   chatPanel.classList.add('visible');
+  $('battle-helpers').style.display='none';
   $('my-fleet').classList.remove('visible');$('opp-fleet').classList.remove('visible');
 }
 
@@ -148,7 +150,7 @@ function startDockDrag(idx,cx,cy,e){
   if(placedShips.find(s=>s._dockIdx===idx))return;e.preventDefault();
   const ghost=createGhost(shipDefs[idx].size);
   ghost.style.left=(cx-getCellSize()/2)+'px';ghost.style.top=(cy-getCellSize()/2)+'px';
-  dragState={shipIdx:idx,ghost,size:shipDefs[idx].size,name:shipDefs[idx].name,fromBoard:false};
+  dragState={shipIdx:idx,ghost,size:shipDefs[idx].size,name:shipDefs[idx].name,fromBoard:false,horiz:dragHorizontal};
   document.addEventListener('mousemove',onDragMove);document.addEventListener('mouseup',onDragEnd);
   document.addEventListener('touchmove',onDragMoveT,{passive:false});document.addEventListener('touchend',onDragEndT);
 }
@@ -156,12 +158,14 @@ function startDockDrag(idx,cx,cy,e){
 function startBoardDrag(shipIdx,cx,cy,e){
   e.preventDefault();
   const s=placedShips[shipIdx];
-  // Remove from board temporarily
+  // Keep ship's current orientation for drag
+  dragHorizontal=s.horizontal;
   boardDragState={shipIdx,origX:s.x,origY:s.y,origH:s.horizontal};
   removePlacedShip(shipIdx);
   const ghost=createGhost(s.size);
+  ghost.style.flexDirection=dragHorizontal?'row':'column';
   ghost.style.left=(cx-getCellSize()/2)+'px';ghost.style.top=(cy-getCellSize()/2)+'px';
-  dragState={shipIdx:s._dockIdx,ghost,size:s.size,name:s.name,fromBoard:true,boardIdx:shipIdx,orig:boardDragState};
+  dragState={shipIdx:s._dockIdx,ghost,size:s.size,name:s.name,fromBoard:true,boardIdx:shipIdx,orig:boardDragState,horiz:dragHorizontal};
   document.addEventListener('mousemove',onDragMove);document.addEventListener('mouseup',onDragEnd);
   document.addEventListener('touchmove',onDragMoveT,{passive:false});document.addEventListener('touchend',onDragEndT);
 }
@@ -191,15 +195,16 @@ function moveDrag(cx,cy){
   dragState.ghost.style.left=(cx-cs/2)+'px';dragState.ghost.style.top=(cy-cs/2)+'px';
   clearPreviews();
   const pos=gridPosFromPoint(cx,cy);
-  if(pos)showPreview(pos.x,pos.y,dragState.size,isHorizontal,-1);
+  if(pos)showPreview(pos.x,pos.y,dragState.size,dragState.horiz!==undefined?dragState.horiz:dragHorizontal,-1);
 }
 
 function endDrag(cx,cy){
   if(!dragState)return;clearPreviews();
   const pos=gridPosFromPoint(cx,cy);
+  const useH=dragState.horiz!==undefined?dragState.horiz:dragHorizontal;
   let placed=false;
-  if(pos&&canPlace(pos.x,pos.y,dragState.size,isHorizontal,-1)){
-    addShip(pos.x,pos.y,dragState.size,dragState.name,isHorizontal,dragState.shipIdx);
+  if(pos&&canPlace(pos.x,pos.y,dragState.size,useH,-1)){
+    addShip(pos.x,pos.y,dragState.size,dragState.name,useH,dragState.shipIdx);
     placed=true;
   } else if(dragState.fromBoard&&dragState.orig){
     // Revert to original position
@@ -289,34 +294,50 @@ function setupBoardInteraction(){
 function rotateShipOnBoard(idx){
   const s=placedShips[idx];
   const newH=!s.horizontal;
-  // Temporarily remove
   const saved={...s};
   placedShips.splice(idx,1);rebuildMyBoard();
-  // Try same pos
   if(canPlace(saved.x,saved.y,saved.size,newH,-1)){
-    saved.horizontal=newH;placedShips.splice(idx,0,saved);rebuildMyBoard();renderMyBoard();return;
+    saved.horizontal=newH;dragHorizontal=newH;
+    placedShips.splice(idx,0,saved);rebuildMyBoard();renderMyBoard();return;
   }
-  // Try nearby positions (spiral search)
   for(let r=1;r<=5;r++){
     for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
       if(Math.abs(dx)!==r&&Math.abs(dy)!==r)continue;
       const nx=saved.x+dx,ny=saved.y+dy;
       if(canPlace(nx,ny,saved.size,newH,-1)){
-        saved.x=nx;saved.y=ny;saved.horizontal=newH;
+        saved.x=nx;saved.y=ny;saved.horizontal=newH;dragHorizontal=newH;
         placedShips.splice(idx,0,saved);rebuildMyBoard();renderMyBoard();return;
       }
     }
   }
-  // Can't rotate — put back and shake
   placedShips.splice(idx,0,saved);rebuildMyBoard();renderMyBoard();
-  // Flash ship red
   const cells=shipCells(saved);
   cells.forEach(([cx,cy])=>{const c=getCell('my-grid',cx,cy);c.classList.add('ship-error')});
   shakeBoard();
   setTimeout(()=>cells.forEach(([cx,cy])=>{const c=getCell('my-grid',cx,cy);c.classList.remove('ship-error')}),600);
 }
 
-$('btn-reset').addEventListener('click',()=>{placedShips=[];resetBoards();btnReady.disabled=true;buildDockShips();renderMyBoard()});
+// ═══ RANDOM PLACEMENT ═══
+function placeShipsRandomly(){
+  placedShips=[];rebuildMyBoard();
+  for(let di=0;di<shipDefs.length;di++){
+    const {size,name}=shipDefs[di];
+    let placed=false;
+    for(let attempt=0;attempt<500&&!placed;attempt++){
+      const horiz=Math.random()<0.5;
+      const x=Math.floor(Math.random()*(horiz?B-size+1:B));
+      const y=Math.floor(Math.random()*(horiz?B:B-size+1));
+      if(canPlace(x,y,size,horiz,-1)){
+        addShip(x,y,size,name,horiz,di);
+        placed=true;
+      }
+    }
+  }
+  renderMyBoard();
+}
+$('btn-random').addEventListener('click',placeShipsRandomly);
+
+$('btn-reset').addEventListener('click',()=>{placedShips=[];resetBoards();btnReady.disabled=true;buildDockShips();renderMyBoard();dragHorizontal=true});
 
 btnReady.addEventListener('click',()=>{
   const data=placedShips.map(s=>({x:s.x,y:s.y,size:s.size,name:s.name,horizontal:s.horizontal}));
@@ -340,7 +361,7 @@ function handleOppGridClick(x,y){
       if(!isMyTurn)setTimeout(()=>setStatus('Rakibin sırası...',false),800);
       updateBoardGlow();
     }
-    renderOppBoard();
+    renderOppBoard();applyAdjHints();
   });
 }
 
@@ -398,6 +419,7 @@ socket.on('phase-change',data=>{
     setStatus(isMyTurn?'Rakip tahtaya tıklayarak ateş et':'Rakibin sırası...',isMyTurn);
     shipDock.classList.remove('visible');
     chatPanel.classList.add('visible');
+    $('battle-helpers').style.display='flex';
     buildFleetStatus('my-fleet',shipDefs);buildFleetStatus('opp-fleet',shipDefs);
     $('my-fleet').classList.add('visible');$('opp-fleet').classList.add('visible');
     renderOppBoard();updateBoardGlow();
@@ -440,6 +462,57 @@ $('btn-rematch-top').addEventListener('click',()=>{
 socket.on('waiting-rematch',()=>{
   if($('rematch-wait-overlay'))$('rematch-wait-overlay').classList.add('visible');
 });
+$('btn-rematch-cancel').addEventListener('click',()=>{
+  $('rematch-wait-overlay').classList.remove('visible');
+  $('rematch-container').style.display='block';
+});
+
+// ═══ ADJACENCY HINT TOGGLE ═══
+function renderOppBoardWithHints(){
+  renderOppBoard();
+  if(!adjHintEnabled)return;
+  // Mark adjacent cells around sunk ships on opp board
+  for(const s of sunkOppShips){
+    const cells=shipCells(s);
+    for(const[cx,cy]of cells){
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const nx=cx+dx,ny=cy+dy;
+        if(nx<0||nx>=B||ny<0||ny>=B)continue;
+        if(myShots[ny][nx]!==0)continue; // already shot
+        const cell=getCell('opp-grid',nx,ny);
+        cell.classList.add('adj-hint');
+      }
+    }
+  }
+}
+const _origRenderOpp=renderOppBoard;
+// Override renderOppBoard to apply hints
+window._renderOppBoard=renderOppBoard;
+
+$('btn-adj-hint').addEventListener('click',()=>{
+  adjHintEnabled=!adjHintEnabled;
+  $('btn-adj-hint').classList.toggle('active',adjHintEnabled);
+  $('adj-hint-icon').textContent=adjHintEnabled?'✓':'✕';
+  applyAdjHints();
+});
+
+function applyAdjHints(){
+  // Clear existing hints
+  for(let r=0;r<B;r++)for(let c=0;c<B;c++){const cell=getCell('opp-grid',c,r);if(cell)cell.classList.remove('adj-hint');}
+  if(!adjHintEnabled)return;
+  for(const s of sunkOppShips){
+    const cells=shipCells(s);
+    for(const[cx,cy]of cells){
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const nx=cx+dx,ny=cy+dy;
+        if(nx<0||nx>=B||ny<0||ny>=B)continue;
+        if(myShots[ny][nx]!==0)continue;
+        const cell=getCell('opp-grid',nx,ny);
+        if(cell)cell.classList.add('adj-hint');
+      }
+    }
+  }
+}
 socket.on('opponent-disconnected',()=>{setStatus('⚠️ Rakip bağlantısı koptu.',false);turnStatus.textContent='Bağlantı Koptu'});
 
 function setPlayerInfo(players){

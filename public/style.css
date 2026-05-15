@@ -112,6 +112,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .grid-cell.ship-sunk{background:var(--sunk);border-color:#450a0a}
 .grid-cell.target{cursor:crosshair}
 .grid-cell.target:hover{background:rgba(16,117,171,0.18);border-color:var(--blue)}
+.grid-cell.adj-hint::after{content:'✕';font-size:14px;font-weight:800;color:rgba(239,68,68,0.45)}
+.grid-cell.adj-hint{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.25)}
 
 /* ═══ FLEET STATUS (sidebar) ═══ */
 .fleet-status{display:none;flex-direction:column;gap:8px;padding-top:34px;min-width:32px;align-items:center}
@@ -131,9 +133,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .dock-ship.placed{opacity:.3;cursor:default;border-color:var(--border);background:var(--bg)}
 .ship-blocks{display:flex;gap:2px}
 .ship-blocks div{width:20px;height:20px;background:var(--navy-dark);border-radius:3px}
-.dock-controls{display:flex;gap:8px;justify-content:center}
+.dock-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .btn-sm{padding:8px 20px;font-size:0.82rem}
-.dock-controls .btn{width:auto;min-width:100px}
+.dock-controls .btn{width:auto;min-width:90px}
+
+/* Battle Helper Buttons */
+.battle-helpers{display:none;gap:8px;justify-content:center;width:100%;max-width:920px}
+.btn-toggle{background:var(--bg);color:var(--navy);border:2px solid var(--border);border-radius:20px;padding:6px 16px;font-size:0.8rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-toggle:hover{border-color:var(--blue);color:var(--blue)}
+.btn-toggle.active{background:rgba(16,117,171,0.1);border-color:var(--blue);color:var(--blue)}
+
+/* Overlay Close Button */
+.overlay-close-btn{position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .2s}
+.overlay-close-btn:hover{background:var(--bg);color:var(--hit)}
 
 /* Drag Ghost */
 .drag-ghost{position:fixed;pointer-events:none;z-index:1000;opacity:.8;display:flex;gap:2px}

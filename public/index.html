@@ -84,8 +84,15 @@
         <div class="dock-ships" id="dock-ships"></div>
         <div class="dock-controls">
           <button class="btn btn-secondary btn-sm" id="btn-reset">Sıfırla</button>
+          <button class="btn btn-secondary btn-sm" id="btn-random">Rastgele</button>
           <button class="btn btn-primary btn-sm" id="btn-ready" disabled>Hazırım</button>
         </div>
+      </div>
+      <!-- Battle Helper Buttons -->
+      <div class="battle-helpers" id="battle-helpers" style="display:none;">
+        <button class="btn btn-toggle btn-sm" id="btn-adj-hint" title="Vurduğun gemilerin yanındaki kareleri işaretle">
+          <span id="adj-hint-icon">✓</span> Komşu İpucu
+        </button>
       </div>
       <!-- Chat Panel -->
       <div class="chat-panel" id="chat-panel">
@@ -93,10 +100,10 @@
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-bottom">
           <div class="chat-quick">
-            <button data-msg="İyi oyun!">İyi oyun!</button>
-            <button data-msg="Güzel hamle!">Güzel hamle!</button>
-            <button data-msg="Vay be!">Vay be!</button>
-            <button data-msg="GG 🤝">GG 🤝</button>
+            <button data-msg="Naber cınım">Naber cınım</button>
+            <button data-msg="Seni seviyorum cınım!!!">Seni seviyorum cınım!!!</button>
+            <button data-msg="karadenizde gemilerin mi battı cınım?">Karadenizde battı mı?</button>
+            <button data-msg="hurma molası!">hurma molası!</button>
           </div>
           <div class="chat-input-row">
             <input type="text" id="chat-input" placeholder="Mesaj yaz..." maxlength="100" autocomplete="off">
@@ -119,7 +126,8 @@
 
   <!-- Rematch Wait -->
   <div class="game-over-overlay" id="rematch-wait-overlay">
-    <div class="game-over-card" style="padding:40px 20px">
+    <div class="game-over-card" style="padding:40px 20px; position:relative;">
+      <button class="overlay-close-btn" id="btn-rematch-cancel" title="İptal et">✕</button>
       <div class="game-over-icon">⏳</div>
       <div class="game-over-title" style="color:var(--navy);font-size:1.4rem">Rakip Bekleniyor</div>
       <div class="game-over-sub" style="margin-bottom:0">Rakibin de "Yeniden Oyna" butonuna basması bekleniyor...</div>

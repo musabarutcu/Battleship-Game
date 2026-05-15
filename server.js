@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
     if (!room || room.phase !== 'finished') return;
     const p = room.players[socket.playerIndex];
     if (p) p.wantsRematch = true;
-    
+
     if (room.players.every(player => player && player.wantsRematch)) {
       room.players.forEach((player, i) => { room.players[i] = createPlayer(player.id, player.nickname); });
       room.phase = 'placement'; room.currentTurn = null; room.winner = null;
