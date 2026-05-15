@@ -151,9 +151,16 @@ io.on('connection', (socket) => {
   socket.on('rematch', () => {
     const room = rooms.get(socket.roomCode);
     if (!room || room.phase !== 'finished') return;
-    room.players.forEach((p, i) => { room.players[i] = createPlayer(p.id, p.nickname); });
-    room.phase = 'placement'; room.currentTurn = null; room.winner = null;
-    io.to(room.code).emit('phase-change', { phase: 'placement', ships: SHIPS, players: getPlayersInfo(room) });
+    const p = room.players[socket.playerIndex];
+    if (p) p.wantsRematch = true;
+    
+    if (room.players.every(player => player && player.wantsRematch)) {
+      room.players.forEach((player, i) => { room.players[i] = createPlayer(player.id, player.nickname); });
+      room.phase = 'placement'; room.currentTurn = null; room.winner = null;
+      io.to(room.code).emit('phase-change', { phase: 'placement', ships: SHIPS, players: getPlayersInfo(room) });
+    } else {
+      socket.emit('waiting-rematch');
+    }
   });
 
   socket.on('disconnect', () => {

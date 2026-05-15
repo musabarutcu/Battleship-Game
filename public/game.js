@@ -345,8 +345,8 @@ function handleOppGridClick(x,y){
 }
 
 function updateBoardGlow(){
-  $('my-board-panel').classList.toggle('active-turn-glow',phase==='battle'&&isMyTurn);
-  $('opp-board-panel').classList.toggle('active-turn-glow',phase==='battle'&&!isMyTurn);
+  $('opp-board-panel').classList.toggle('active-turn-glow',phase==='battle'&&isMyTurn);
+  $('my-board-panel').classList.toggle('active-turn-glow',phase==='battle'&&!isMyTurn);
   $('opp-board-panel').classList.remove('glow');
   $('my-board-panel').classList.remove('glow');
 }
@@ -382,6 +382,7 @@ $('mobile-tabs').addEventListener('click',e=>{
 // ═══ SOCKET EVENTS ═══
 socket.on('phase-change',data=>{
   phase=data.phase;
+  if($('rematch-wait-overlay'))$('rematch-wait-overlay').classList.remove('visible');
   if(phase==='placement'){
     shipDefs=data.ships;if(data.players)setPlayerInfo(data.players);
     showScreen('game-screen');buildGrid('my-grid',handleMyGridClick);buildGrid('opp-grid',handleOppGridClick);
@@ -434,6 +435,9 @@ socket.on('game-over',data=>{
 $('btn-rematch-top').addEventListener('click',()=>{
   $('rematch-container').style.display = 'none';
   resetBoards();sunkOppShips.length=0;socket.emit('rematch');
+});
+socket.on('waiting-rematch',()=>{
+  if($('rematch-wait-overlay'))$('rematch-wait-overlay').classList.add('visible');
 });
 socket.on('opponent-disconnected',()=>{setStatus('⚠️ Rakip bağlantısı koptu.',false);turnStatus.textContent='Bağlantı Koptu'});
 

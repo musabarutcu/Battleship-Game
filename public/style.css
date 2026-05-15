@@ -188,10 +188,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   .mobile-tabs{display:flex}
   .board-panel.hidden-mobile{display:none}
   .board-with-fleet:has(.hidden-mobile){display:none}
-  .board-grid{grid-template-columns:22px repeat(10,minmax(26px,1fr));grid-template-rows:22px repeat(10,minmax(26px,1fr))}
-  .grid-cell{width:auto;height:auto;aspect-ratio:1}
-  .board-panel{width:100%;max-width:400px}
-  .board-grid{width:100%}
+  .board-grid{grid-template-columns:24px repeat(10,28px);grid-template-rows:24px repeat(10,28px);width:auto;justify-content:center}
+  .grid-cell{width:28px;height:28px;aspect-ratio:auto}
+  .board-panel{width:auto;max-width:none}
   .drag-ghost div{width:26px;height:26px}
   .top-bar{padding:10px 12px}
   .player-name{font-size:0.85rem}
@@ -203,7 +202,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 }
 @media(max-width:400px){
   .lobby-card{padding:28px 18px}
-  .board-grid{grid-template-columns:18px repeat(10,1fr);grid-template-rows:18px repeat(10,1fr);gap:1px}
+  .board-grid{grid-template-columns:20px repeat(10,minmax(24px, 26px));grid-template-rows:20px repeat(10,minmax(24px, 26px));gap:1px;width:auto;justify-content:center}
   .grid-cell.hit::after,.grid-cell.sunk::after{width:12px;height:12px}
   .grid-cell.miss::after{font-size:12px}
   .chat-messages{height:120px}
