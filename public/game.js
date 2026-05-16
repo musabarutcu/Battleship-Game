@@ -25,6 +25,19 @@ document.querySelectorAll('.theme-toggle button').forEach(btn => {
   btn.addEventListener('click', () => setTheme(btn.dataset.theme));
 });
 
+// In-game theme button (inside battle-helpers)
+document.addEventListener('click', e => {
+  if (e.target.closest('#btn-theme-game')) {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    const icon = document.getElementById('theme-game-icon');
+    if (icon) icon.textContent = next === 'dark' ? '☀️' : '🌙';
+    const btn = document.getElementById('btn-theme-game');
+    if (btn) btn.classList.toggle('active', next === 'dark');
+  }
+});
+
 const $=id=>document.getElementById(id);
 const turnStatus=$('turn-status'), statusMsg=$('status-msg'), shipDock=$('ship-dock');
 const dockShipsEl=$('dock-ships'), btnReady=$('btn-ready'), gameOverOverlay=$('game-over-overlay');
