@@ -5,6 +5,25 @@ let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', m
 let adjHintEnabled = true, gameStartTime = null, myAvatar = 'avatar1.png', soundEnabled = true;
 let myBoard = [], myShots = [], myHitsReceived = [];
 const sunkOppShips = [];
+let totalShipCells = 0;
+
+// ═══ DARK MODE ═══
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('battleship-theme', theme);
+  document.querySelectorAll('.theme-toggle').forEach(toggle => {
+    toggle.querySelectorAll('button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+  });
+}
+(function initTheme() {
+  const saved = localStorage.getItem('battleship-theme') || 'light';
+  setTheme(saved);
+})();
+document.querySelectorAll('.theme-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+});
 
 const $=id=>document.getElementById(id);
 const turnStatus=$('turn-status'), statusMsg=$('status-msg'), shipDock=$('ship-dock');
@@ -350,6 +369,12 @@ function endDrag(cx,cy){
 function addShip(x,y,size,name,horiz,dockIdx){
   placedShips.push({x,y,size,name,horizontal:horiz,_dockIdx:dockIdx});
   rebuildMyBoard();renderMyBoard();updateDockMarks();
+  // Ship lock-in animation
+  for(let i=0;i<size;i++){
+    const cx=horiz?x+i:x,cy=horiz?y:y+i;
+    const cell=getCell('my-grid',cx,cy);
+    if(cell){cell.classList.add('ship-lock');setTimeout(()=>cell.classList.remove('ship-lock'),400)}
+  }
   if(placedShips.length>=shipDefs.length)btnReady.disabled=false;
 }
 
@@ -519,7 +544,7 @@ function handleOppGridClick(x,y){
       if(!isMyTurn)setTimeout(()=>setStatus(texts[lang].statusOpp,false),800);
       updateBoardGlow();
     }
-    renderOppBoard();applyAdjHints();
+    renderOppBoard();applyAdjHints();updateHPBars();
   });
 }
 
@@ -582,6 +607,9 @@ socket.on('phase-change',data=>{
     buildFleetStatus('my-fleet',shipDefs);buildFleetStatus('opp-fleet',shipDefs);
     $('my-fleet').classList.add('visible');$('opp-fleet').classList.add('visible');
     gameStartTime=Date.now();
+    // Calculate total ship cells for HP bars
+    totalShipCells=0;shipDefs.forEach(s=>totalShipCells+=s.size);
+    updateHPBars();
     renderOppBoard();updateBoardGlow();
     if(window.innerWidth<=860)$('mobile-tabs').querySelectorAll('button')[1].click();
   }
@@ -598,7 +626,7 @@ socket.on('opponent-fired',data=>{
     setTimeout(()=>animateSinking('my-grid',data.sunkShip),200);
     setStatus(texts[lang].oppSunk,false);updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk));
   } else setStatus(data.hit?texts[lang].oppHit:texts[lang].oppMiss,false);
-  renderMyBoard();
+  renderMyBoard();updateHPBars();
   if(!data.gameOver){
     isMyTurn=data.currentTurn===playerIndex;
     turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
@@ -616,14 +644,23 @@ socket.on('game-over',data=>{
   const accuracy=total>0?Math.round(hits/total*100):0;
   const elapsed=gameStartTime?Math.floor((Date.now()-gameStartTime)/1000):0;
   const mm=Math.floor(elapsed/60),ss=String(elapsed%60).padStart(2,'0');
-  $('stat-hits').textContent=hits;
-  $('stat-misses').textContent=misses;
-  $('stat-accuracy').textContent=accuracy+'%';
+  $('stat-hits').textContent='0';
+  $('stat-misses').textContent='0';
+  $('stat-accuracy').textContent='0%';
   $('stat-time').textContent=mm+':'+ss;
-  $('ig-stat-hits').textContent=hits;
-  $('ig-stat-misses').textContent=misses;
-  $('ig-stat-accuracy').textContent=accuracy+'%';
+  $('ig-stat-hits').textContent='0';
+  $('ig-stat-misses').textContent='0';
+  $('ig-stat-accuracy').textContent='0%';
   $('ig-stat-time').textContent=mm+':'+ss;
+  // Count-up animations
+  setTimeout(()=>{
+    animateCountUp($('stat-hits'),hits,'');
+    animateCountUp($('stat-misses'),misses,'');
+    animateCountUp($('stat-accuracy'),accuracy,'%');
+    animateCountUp($('ig-stat-hits'),hits,'');
+    animateCountUp($('ig-stat-misses'),misses,'');
+    animateCountUp($('ig-stat-accuracy'),accuracy,'%');
+  },200);
   if (myAvatar.includes('.png')) {
     $('go-icon').innerHTML = `<img src="${myAvatar}" alt="Avatar">`;
   } else {
@@ -723,4 +760,36 @@ function setPlayerInfo(players){
   $('p1-name').textContent=players[0].nickname;$('p1-avatar').innerHTML=renderAvatar(players[0]);
   $('p2-name').textContent=players[1].nickname;$('p2-avatar').innerHTML=renderAvatar(players[1]);
   opponentNick=playerIndex===0?players[1].nickname:players[0].nickname;
+}
+
+// ═══ HP BARS ═══
+function updateHPBars(){
+  if(!totalShipCells)return;
+  // My HP = my ship cells not hit
+  let myHits=0,oppHits=0;
+  for(let r=0;r<B;r++)for(let c=0;c<B;c++){if(myHitsReceived[r][c]===2)myHits++;if(myShots[r][c]===2)oppHits++}
+  const myPct=Math.max(0,Math.round((totalShipCells-myHits)/totalShipCells*100));
+  const oppPct=Math.max(0,Math.round((totalShipCells-oppHits)/totalShipCells*100));
+  const myBar=playerIndex===0?$('p1-hp'):$('p2-hp');
+  const oppBar=playerIndex===0?$('p2-hp'):$('p1-hp');
+  myBar.style.width=myPct+'%';
+  oppBar.style.width=oppPct+'%';
+  myBar.className='hp-bar-fill'+(myPct<=20?' danger':myPct<=50?' warning':'');
+  oppBar.className='hp-bar-fill'+(oppPct<=20?' danger':oppPct<=50?' warning':'');
+}
+
+// ═══ COUNT-UP ANIMATION ═══
+function animateCountUp(el,target,suffix){
+  suffix=suffix||'';
+  const dur=800,steps=30;
+  let step=0;
+  const isTime=suffix==='' && target.toString().includes(':');
+  if(isTime){el.textContent=target;return}
+  const num=parseInt(target)||0;
+  const interval=setInterval(()=>{
+    step++;
+    const val=Math.round(num*(step/steps));
+    el.textContent=val+suffix;
+    if(step>=steps){clearInterval(interval);el.textContent=target+suffix}
+  },dur/steps);
 }
