@@ -2,7 +2,7 @@
 
 <img src="public/logo-text.png" alt="Gemileri Batır" width="260">
 
-### Arkadaşlarınla saniyeler içinde başlayabileceğin, gerçek zamanlı çok oyunculu Gemileri Batır (Battleship) oyunu.
+### Arkadaşınla saniyeler içinde başlayabileceğin gerçek zamanlı çok oyunculu Amiral Battı oyunu.
 
 **🎮 [gemileribatir.onrender.com](https://gemileribatir.onrender.com) — hemen oyna**
 
@@ -12,9 +12,9 @@
 
 ## Gemileri Batır
 
-Bu oyunun herkesin bildiği adı aslında Amiral Battı; kendi hazırladığım bu özel sürüme ben Gemileri Batır adını verdim. İnternette arkadaşlarımla hızlıca oynayabileceğim, akıcı ve göze hitap eden bir arayüze sahip bir Amiral Battı oyunu aradım ama bulamadım — bulduklarım ya reklamlarla doluydu, ya arayüzü on yıllık kalmıştı ya da bir arkadaşı davet etmek üç dört adım gerektiriyordu. Ben de oturup kendim yaptım.
+İnternette arkadaşlarımla hızlıca oynayabileceğim akıcı ve göze hitap eden bir arayüze sahip bir Amiral Battı oyunu aradım ama bulamadım, bulduklarım ya reklamlarla doluydu ya arayüzü on yıllık kalmıştı ya da bir arkadaşı davet etmek üç dört adım gerektiriyordu. Ben de daha akıcı bir arayüze ve kullanıcı dostu olan bir versiyonunu yapmak istedim.
 
-Kayıt olmana ya da bir şey indirmene gerek yok; linke tıklayıp direkt oynuyorsun. Arkadaşını davet etmek için de tek bir oda kodu, bir link ya da bir karekod paylaşman yeterli. İster masaüstünden gir ister telefondan, deneyim aynı akıcılıkta.
+
 
 ## Ekran Görüntüleri
 
