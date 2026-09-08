@@ -53,7 +53,7 @@ Oyundaki 4 avatarı da kendim tasarladım:
 1. Bir takma ad yaz ve avatarını seç.
 2. **Oda Oluştur**'a bas; çıkan 5 haneli kodu, linki ya da karekodu arkadaşına gönder.
 3. Arkadaşın odaya katılınca ikiniz de 5 geminizi tahtaya yerleştirin (sürükle-bırak, tıklayıp döndürme veya "Rastgele").
-4. **Hazırım**'a basınca savaş başlar — sırayla rakip tahtasına ateş edersiniz, isabet ettiğinizde sıra sizde kalır.
+4. **Hazırım**'a basınca savaş başlar,  sırayla rakip tahtasına ateş edersiniz, isabet ettiğinizde sıra sizde kalır.
 5. Rakibinin tüm gemilerini ilk batıran kazanır. **Yeniden Oyna** ile aynı odada tekrar oynayabilirsiniz.
 
 ## Teknolojiler
