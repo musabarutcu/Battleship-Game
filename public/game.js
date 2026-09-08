@@ -1,6 +1,7 @@
 const socket = io({ transports: ['websocket'] });
 const B = 10, COLS = 'ABCDEFGHIJ'.split('');
 let playerIndex = -1, roomCode = '', phase = 'lobby', isMyTurn = false;
+let sessionToken = null;
 let shipDefs = [], placedShips = [], dragHorizontal = true, opponentNick = '', myNick = '';
 let adjHintEnabled = true, gameStartTime = null, myAvatar = 'avatar1.png', soundEnabled = true;
 let myBoard = [], myShots = [], myHitsReceived = [];
@@ -80,7 +81,7 @@ function playSound(type) {
 // ═══ I18N ═══
 const texts = {
   tr: {
-    welcome: "Hoş geldin cınım", nickname: "Takma Ad", nicknamePh: "Adını gir...", createRoom: "Oda Oluştur",
+    welcome: "Hoş geldin", nickname: "Takma Ad", nicknamePh: "Adını gir...", createRoom: "Oda Oluştur",
     roomCodeLabel: "Oda Kodu", waitingOpponent: "Rakip bekleniyor...", or: "veya", join: "Katıl",
     rematch: "Yeniden Oyna", myFleet: "Kendi Filon", oppFleet: "Rakip Filo", hits: "İsabet",
     misses: "Iska", accuracy: "Oran", time: "Süre", reset: "Sıfırla", random: "Rastgele",
@@ -91,10 +92,21 @@ const texts = {
     sunkShip: "Bir gemi batırdın!", hitAgain: "İsabet! Tekrar ateş et", miss: "Iska!",
     oppHit: "Rakip isabet etti!", oppMiss: "Rakip ıskaladı!", oppSunk: "Bir gemin battı!",
     yourTurn: "Senin Sıran", oppTurn: " oynuyor", oppDisc: "⚠️ Rakip bağlantısı koptu.", discWait: "Bağlantı Koptu",
-    readyOpp: "Rakip hazır!", roomLabel: "Oda: "
+    readyOpp: "Rakip hazır!", roomLabel: "Oda: ",
+    codeInputPh: "5 haneli kod", enterCodeError: "5 haneli kod girin.",
+    inviteDetected: "Davet linki algılandı — adını gir ve Katıl'a bas!",
+    turnLabel: "Durum", theme: "Tema",
+    copyLinkTitle: "Linki kopyala", cancelTitle: "İptal et",
+    adjHintTitle: "Vurduğun gemilerin yanındaki kareleri işaretle", soundTitle: "Ses efektlerini aç/kapat",
+    rematchWaitTitle: "Rakip Bekleniyor", rematchWaitSub: "Rakibin de \"Yeniden Oyna\" butonuna basması bekleniyor...",
+    oppReconnected: "Rakip geri bağlandı!", scanQr: "Telefonla taramak için karekod",
+    errRoomNotFound: "Oda bulunamadı.", errRoomFull: "Oda dolu.", errGameStarted: "Oyun başlamış.",
+    errInvalidState: "Geçersiz durum.", errAlreadyReady: "Zaten yerleştirildi.", errInvalidPlacement: "Geçersiz yerleşim.",
+    errInvalid: "Geçersiz.", errNotYourTurn: "Sıra sende değil.", errInvalidCoord: "Geçersiz koordinat.",
+    errAlreadyFired: "Zaten ateş edildi."
   },
   en: {
-    welcome: "Welcome darling", nickname: "Nickname", nicknamePh: "Enter your name...", createRoom: "Create Room",
+    welcome: "Welcome", nickname: "Nickname", nicknamePh: "Enter your name...", createRoom: "Create Room",
     roomCodeLabel: "Room Code", waitingOpponent: "Waiting for opponent...", or: "or", join: "Join",
     rematch: "Rematch", myFleet: "Your Fleet", oppFleet: "Enemy Fleet", hits: "Hits",
     misses: "Misses", accuracy: "Accuracy", time: "Time", reset: "Reset", random: "Random",
@@ -105,15 +117,28 @@ const texts = {
     sunkShip: "You sank a ship!", hitAgain: "Hit! Fire again", miss: "Miss!",
     oppHit: "Opponent hit!", oppMiss: "Opponent missed!", oppSunk: "Your ship sank!",
     yourTurn: "Your Turn", oppTurn: " is playing", oppDisc: "⚠️ Opponent disconnected.", discWait: "Disconnected",
-    readyOpp: "Opponent is ready!", roomLabel: "Room: "
+    readyOpp: "Opponent is ready!", roomLabel: "Room: ",
+    codeInputPh: "5-digit code", enterCodeError: "Please enter a 5-digit code.",
+    inviteDetected: "Invite link detected — enter your name and Join!",
+    turnLabel: "Status", theme: "Theme",
+    copyLinkTitle: "Copy link", cancelTitle: "Cancel",
+    adjHintTitle: "Mark the cells around your hits", soundTitle: "Toggle sound effects",
+    rematchWaitTitle: "Waiting for Opponent", rematchWaitSub: "Waiting for your opponent to hit \"Rematch\" too...",
+    oppReconnected: "Opponent reconnected!", scanQr: "Scan with your phone",
+    errRoomNotFound: "Room not found.", errRoomFull: "Room is full.", errGameStarted: "Game already started.",
+    errInvalidState: "Invalid state.", errAlreadyReady: "Already placed.", errInvalidPlacement: "Invalid placement.",
+    errInvalid: "Invalid.", errNotYourTurn: "Not your turn.", errInvalidCoord: "Invalid coordinate.",
+    errAlreadyFired: "Already fired."
   }
 };
+function errText(code){ return (texts[lang] && texts[lang][code]) || code; }
 let lang = 'tr';
 function setLang(l) {
   lang = l;
   $('btn-lang-tr').classList.toggle('active', l === 'tr'); $('btn-lang-en').classList.toggle('active', l === 'en');
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = texts[l][el.dataset.i18n]; });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = texts[l][el.dataset.i18nPlaceholder]; });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = texts[l][el.dataset.i18nTitle]; });
   if (phase === 'placement') turnStatus.innerHTML = '<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
   else if (phase === 'battle') turnStatus.textContent = isMyTurn ? texts[lang].yourTurn : `${opponentNick}${texts[lang].oppTurn}`;
 
@@ -204,17 +229,35 @@ $('btn-sound').addEventListener('click', () => {
   $('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
 });
 
+function saveSession(){
+  try{ sessionStorage.setItem('battleship-session', JSON.stringify({token:sessionToken, nickname:myNick, avatar:myAvatar})); }catch(e){}
+}
+function clearSession(){
+  try{ sessionStorage.removeItem('battleship-session'); }catch(e){}
+}
+
+function renderInviteQr(url){
+  const el=$('qr-code');
+  if(!el||typeof qrcode==='undefined')return;
+  el.innerHTML='';
+  const qr=qrcode(0,'M');
+  qr.addData(url);
+  qr.make();
+  el.innerHTML=qr.createSvgTag({cellSize:4,margin:4});
+}
+
 $('btn-create').addEventListener('click',()=>{
   myNick=($('nickname-input').value.trim()||'Oyuncu');
   socket.emit('create-room',{nickname:myNick, avatar:myAvatar},(res)=>{
     if(res.success){
-      roomCode=res.code;playerIndex=res.playerIndex;
+      roomCode=res.code;playerIndex=res.playerIndex;sessionToken=res.token;saveSession();
       $('room-code-display').textContent=roomCode;
       $('waiting-section').classList.add('visible');
       $('lobby-error').textContent='';
       // Build invite link
       const url=`${location.origin}${location.pathname}?join=${roomCode}`;
       $('invite-link-input').value=url;
+      renderInviteQr(url);
     }
   });
 });
@@ -237,11 +280,11 @@ $('btn-copy-link').addEventListener('click',()=>{
 
 $('btn-join').addEventListener('click',()=>{
   const code=$('code-input').value.trim().toUpperCase();
-  if(code.length!==5){$('lobby-error').textContent='5 haneli kod girin.';return}
+  if(code.length!==5){$('lobby-error').textContent=texts[lang].enterCodeError;return}
   myNick=($('nickname-input').value.trim()||'Oyuncu');
   socket.emit('join-room',{code,nickname:myNick, avatar:myAvatar},(res)=>{
-    if(res.success){roomCode=res.code;playerIndex=res.playerIndex;$('lobby-error').textContent=''}
-    else $('lobby-error').textContent=res.error;
+    if(res.success){roomCode=res.code;playerIndex=res.playerIndex;sessionToken=res.token;saveSession();$('lobby-error').textContent=''}
+    else $('lobby-error').textContent=errText(res.error);
   });
 });
 
@@ -255,7 +298,7 @@ $('btn-join').addEventListener('click',()=>{
     history.replaceState(null,'',location.pathname);
     // Show a subtle hint
     $('lobby-error').style.color='var(--blue)';
-    $('lobby-error').textContent=lang === 'en' ? "Invite link detected — enter your name and Join!" : "Davet linki algılandı — adını gir ve Katıl'a bas!";
+    $('lobby-error').textContent=texts[lang].inviteDetected;
   }
 })();
 
@@ -534,7 +577,7 @@ btnReady.addEventListener('click',()=>{
   const data=placedShips.map(s=>({x:s.x,y:s.y,size:s.size,name:s.name,horizontal:s.horizontal}));
   socket.emit('place-ships',data,res=>{
     if(res.success){shipDock.classList.remove('visible');setStatus(texts[lang].statusWait,false)}
-    else setStatus(res.error,false);
+    else setStatus(errText(res.error),false);
   });
 });
 
@@ -542,7 +585,7 @@ btnReady.addEventListener('click',()=>{
 function handleOppGridClick(x,y){
   if(phase!=='battle'||!isMyTurn)return;if(myShots[y][x]!==0)return;
   socket.emit('fire',{x,y},res=>{
-    if(!res.success){setStatus(res.error,false);return}
+    if(!res.success){setStatus(errText(res.error),false);return}
     myShots[y][x]=res.hit?2:1;
     animateHit('opp-grid',x,y,res.hit);
     playSound(res.hit ? (res.sunkShip ? 'sunk' : 'hit') : 'miss');
@@ -579,11 +622,35 @@ document.querySelectorAll('.chat-quick button').forEach(btn=>{
   btn.addEventListener('click',()=>sendChat(btn.dataset.msg));
 });
 
+// ═══ CHAT UNREAD NOTIFICATION (mobile) ═══
+let chatUnread=0;
+const chatFab=$('chat-fab'), chatFabBadge=$('chat-fab-badge');
+function isChatInView(){
+  const r=chatPanel.getBoundingClientRect();
+  return r.top<(window.innerHeight||document.documentElement.clientHeight)&&r.bottom>0;
+}
+function clearChatUnread(){
+  chatUnread=0;
+  if(chatFab)chatFab.style.display='none';
+  if(chatFabBadge)chatFabBadge.textContent='0';
+}
+function bumpChatUnread(){
+  chatUnread++;
+  if(chatFabBadge)chatFabBadge.textContent=chatUnread>9?'9+':chatUnread;
+  if(chatFab)chatFab.style.display='flex';
+}
+window.addEventListener('scroll',()=>{ if(chatUnread&&isChatInView())clearChatUnread(); },{passive:true});
+if(chatFab)chatFab.addEventListener('click',()=>{
+  chatPanel.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(clearChatUnread,400);
+});
+
 socket.on('chat-message',data=>{
   const div=document.createElement('div');
   div.className='chat-msg'+(data.playerIndex===playerIndex?' own':'');
   div.innerHTML=`<span class="chat-author">${data.nickname}:</span><span class="chat-text">${escHtml(data.message)}</span>`;
   chatMessages.appendChild(div);chatMessages.scrollTop=chatMessages.scrollHeight;
+  if(data.playerIndex!==playerIndex&&!isChatInView())bumpChatUnread();
 });
 
 function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -767,6 +834,102 @@ function applyAdjHints(){
   }
 }
 socket.on('opponent-disconnected',()=>{setStatus(texts[lang].oppDisc,false);turnStatus.textContent=texts[lang].discWait});
+
+socket.on('opponent-reconnected',()=>{
+  setStatus(texts[lang].oppReconnected,true);
+  if(phase==='placement')turnStatus.innerHTML='<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
+  else if(phase==='battle')turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
+});
+
+// ═══ RECONNECT / SESSION RESTORE ═══
+function attemptRejoin(){
+  socket.emit('rejoin-room',sessionToken,res=>{
+    if(!res||!res.success){sessionToken=null;clearSession();return}
+    roomCode=res.code;playerIndex=res.playerIndex;
+    restoreFromRejoin(res);
+  });
+}
+
+function restoreFromRejoin(res){
+  phase=res.phase;
+  shipDefs=res.ships;
+  if(res.players)setPlayerInfo(res.players);
+
+  if(phase==='waiting'){
+    showScreen('lobby-screen');
+    $('room-code-display').textContent=roomCode;
+    $('waiting-section').classList.add('visible');
+    const url=`${location.origin}${location.pathname}?join=${roomCode}`;
+    $('invite-link-input').value=url;
+    renderInviteQr(url);
+    return;
+  }
+
+  showScreen('game-screen');
+  buildGrid('my-grid',handleMyGridClick);buildGrid('opp-grid',handleOppGridClick);
+  setupBoardInteraction();
+
+  resetBoards();
+  placedShips=(res.myShips||[]).map(s=>({...s}));
+  rebuildMyBoard();
+  myShots=res.myShots||myShots;
+  myHitsReceived=res.myHitsReceived||myHitsReceived;
+  placedShips.forEach(s=>{ s.sunk=shipCells(s).every(([cx,cy])=>myHitsReceived[cy][cx]===2); });
+  sunkOppShips.length=0;
+  (res.oppSunkShips||[]).forEach(s=>sunkOppShips.push(s));
+
+  $('room-code-small').textContent=texts[lang].roomLabel+roomCode;
+
+  if(phase==='placement'){
+    chatPanel.classList.add('visible');
+    $('battle-helpers').style.display='none';
+    $('my-fleet').classList.remove('visible');$('opp-fleet').classList.remove('visible');
+    $('in-game-stats').style.display='none';
+    turnStatus.innerHTML='<img src="logo-icon.png" alt="Logo" style="width:36px; vertical-align:middle;">';
+    if(res.myReady){
+      shipDock.classList.remove('visible');
+      setStatus(texts[lang].statusWait,false);
+    } else {
+      dragHorizontal=true;
+      buildDockShips();updateDockMarks();
+      shipDock.classList.add('visible');
+      btnReady.disabled=true;
+      setStatus('',false);
+    }
+    renderMyBoard();
+  } else if(phase==='battle'){
+    isMyTurn=res.currentTurn===playerIndex;
+    turnStatus.textContent=isMyTurn?texts[lang].yourTurn:`${opponentNick}${texts[lang].oppTurn}`;
+    setStatus(isMyTurn?texts[lang].statusFire:texts[lang].statusOpp,isMyTurn);
+    shipDock.classList.remove('visible');
+    chatPanel.classList.add('visible');
+    $('battle-helpers').style.display='flex';
+    buildFleetStatus('my-fleet',shipDefs);buildFleetStatus('opp-fleet',shipDefs);
+    updateFleetStatus('my-fleet',placedShips.filter(s=>s.sunk));
+    updateFleetStatus('opp-fleet',sunkOppShips);
+    $('my-fleet').classList.add('visible');$('opp-fleet').classList.add('visible');
+    gameStartTime=gameStartTime||Date.now();
+    totalShipCells=0;shipDefs.forEach(s=>totalShipCells+=s.size);
+    renderMyBoard();renderOppBoard();applyAdjHints();updateHPBars();updateBoardGlow();
+    if(window.innerWidth<=860)$('mobile-tabs').querySelectorAll('button')[0].click();
+  }
+}
+
+socket.on('connect',()=>{
+  if(sessionToken){attemptRejoin();return}
+  try{
+    const raw=sessionStorage.getItem('battleship-session');
+    if(raw){
+      const s=JSON.parse(raw);
+      if(s&&s.token){
+        sessionToken=s.token;
+        if(s.nickname)myNick=s.nickname;
+        if(s.avatar)myAvatar=s.avatar;
+        attemptRejoin();
+      }
+    }
+  }catch(e){}
+});
 
 function setPlayerInfo(players){
   const renderAvatar = p => p.avatar && p.avatar.includes('.png') ? `<img src="${p.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : (p.avatar || p.nickname[0].toUpperCase());

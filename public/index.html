@@ -23,7 +23,7 @@
         <button id="btn-lang-en">EN</button>
       </div>
       <img src="logo-text.png" alt="Gemileri Batır" style="max-width:180px; margin:0 auto 10px; display:block;">
-      <p class="lobby-subtitle" style="font-size:1.1rem;" data-i18n="welcome">Hoş geldin cınım</p>
+      <p class="lobby-subtitle" style="font-size:1.1rem;" data-i18n="welcome">Hoş geldin</p>
       <div class="avatar-picker" id="avatar-picker">
         <div class="avatar-option active" data-avatar="avatar1.png"><img src="avatar1.png" alt="Avatar 1"></div>
         <div class="avatar-option" data-avatar="avatar2.png"><img src="avatar2.png" alt="Avatar 2"></div>
@@ -40,9 +40,10 @@
         <div class="room-code-big" id="room-code-display">-----</div>
         <div class="invite-link-row">
           <input type="text" id="invite-link-input" class="invite-link-input" readonly>
-          <button class="btn-copy-link" id="btn-copy-link" title="Linki kopyala">🔗</button>
+          <button class="btn-copy-link" id="btn-copy-link" title="Linki kopyala" data-i18n-title="copyLinkTitle">🔗</button>
         </div>
         <div class="copy-confirm" id="copy-confirm">✓ Link kopyalandı!</div>
+        <div class="qr-wrap"><div class="qr-code" id="qr-code"></div><div class="qr-label" data-i18n="scanQr">Telefonla taramak için karekod</div></div>
         <img class="waiting-anchor-img" src="logo-icon.png" alt="⚓">
         <div class="waiting-text" data-i18n="waitingOpponent">Rakip bekleniyor...</div>
       </div>
@@ -50,7 +51,7 @@
       <div class="input-group">
         <label for="code-input" data-i18n="roomCodeLabel">Oda Kodu</label>
         <div class="join-row">
-          <input type="text" id="code-input" placeholder="5 haneli kod" maxlength="5" autocomplete="off">
+          <input type="text" id="code-input" placeholder="5 haneli kod" maxlength="5" autocomplete="off" data-i18n-placeholder="codeInputPh">
           <button class="btn btn-secondary" id="btn-join" data-i18n="join">Katıl</button>
         </div>
       </div>
@@ -69,7 +70,7 @@
         <span class="player-name" id="p1-name">Oyuncu 1</span>
       </div>
       <div class="turn-center">
-        <div class="turn-label">Durum</div>
+        <div class="turn-label" data-i18n="turnLabel">Durum</div>
         <div class="turn-status" id="turn-status">Gemilerini Yerleştir</div>
         <div class="room-code-small" id="room-code-small"></div>
       </div>
@@ -125,14 +126,14 @@
       </div>
       <!-- Battle Helper Buttons -->
       <div class="battle-helpers" id="battle-helpers" style="display:none;">
-        <button class="btn btn-toggle btn-sm" id="btn-adj-hint" title="Vurduğun gemilerin yanındaki kareleri işaretle">
+        <button class="btn btn-toggle btn-sm" id="btn-adj-hint" title="Vurduğun gemilerin yanındaki kareleri işaretle" data-i18n-title="adjHintTitle">
           <span id="adj-hint-icon">✓</span> <span data-i18n="adjHint">Komşu İpucu</span>
         </button>
-        <button class="btn btn-toggle btn-sm active" id="btn-sound" title="Ses efektlerini aç/kapat">
+        <button class="btn btn-toggle btn-sm active" id="btn-sound" title="Ses efektlerini aç/kapat" data-i18n-title="soundTitle">
           <span id="sound-icon">🔊</span> <span data-i18n="sound">Ses</span>
         </button>
         <button class="btn btn-toggle btn-sm" id="btn-theme-game">
-          <span id="theme-game-icon">🌙</span> <span>Tema</span>
+          <span id="theme-game-icon">🌙</span> <span data-i18n="theme">Tema</span>
         </button>
       </div>
       <!-- Chat Panel -->
@@ -141,9 +142,9 @@
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-bottom">
           <div class="chat-quick">
-            <button data-msg="NABER CINIM?">NABER CINIM?</button>
-            <button data-msg="SENİ SEVİYORUM CINIM!!">SENİ SEVİYORUM CINIM!!</button>
-            <button data-msg="HURMA MOLASI!">HURMA MOLASI!</button>
+            <button data-msg="İYİ ŞANSLAR!">İYİ ŞANSLAR!</button>
+            <button data-msg="GÜZEL ATIŞ!">GÜZEL ATIŞ!</button>
+            <button data-msg="İYİ OYUNDU!">İYİ OYUNDU!</button>
           </div>
           <div class="chat-input-row">
             <input type="text" id="chat-input" placeholder="Mesaj yaz..." maxlength="100" autocomplete="off">
@@ -151,6 +152,7 @@
           </div>
         </div>
       </div>
+      <button class="chat-fab" id="chat-fab" title="Sohbet"><span>💬</span><span class="chat-fab-badge" id="chat-fab-badge">0</span></button>
     </div>
   </div>
 
@@ -173,14 +175,15 @@
   <!-- Rematch Wait -->
   <div class="game-over-overlay" id="rematch-wait-overlay">
     <div class="game-over-card" style="padding:40px 20px; position:relative;">
-      <button class="overlay-close-btn" id="btn-rematch-cancel" title="İptal et">✕</button>
+      <button class="overlay-close-btn" id="btn-rematch-cancel" title="İptal et" data-i18n-title="cancelTitle">✕</button>
       <div class="game-over-icon">⏳</div>
-      <div class="game-over-title" style="color:var(--navy);font-size:1.4rem">Rakip Bekleniyor</div>
-      <div class="game-over-sub" style="margin-bottom:0">Rakibin de "Yeniden Oyna" butonuna basması bekleniyor...</div>
+      <div class="game-over-title" style="color:var(--navy);font-size:1.4rem" data-i18n="rematchWaitTitle">Rakip Bekleniyor</div>
+      <div class="game-over-sub" style="margin-bottom:0" data-i18n="rematchWaitSub">Rakibin de "Yeniden Oyna" butonuna basması bekleniyor...</div>
     </div>
   </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
+<script src="qrcode.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

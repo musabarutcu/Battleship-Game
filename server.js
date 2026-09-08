@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,6 +15,7 @@ const io = new Server(server, {
 app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = new Map();
+const sessionTokens = new Map(); // token -> { code, playerIndex }
 const BOARD_SIZE = 10;
 const SHIPS = [
   { name: 'Carrier', size: 5 },
@@ -30,12 +32,16 @@ function generateCode() {
   return r;
 }
 
+function generateToken() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
 function emptyBoard() {
   return Array.from({ length: BOARD_SIZE }, () => Array(BOARD_SIZE).fill(0));
 }
 
-function createPlayer(id, nickname, avatar) {
-  return { id, nickname, avatar, board: emptyBoard(), shots: emptyBoard(), ships: [], ready: false, shipsRemaining: SHIPS.length };
+function createPlayer(id, nickname, avatar, token) {
+  return { id, nickname, avatar, token, board: emptyBoard(), shots: emptyBoard(), ships: [], ready: false, shipsRemaining: SHIPS.length };
 }
 
 function getShipCells(s) {
@@ -88,31 +94,72 @@ io.on('connection', (socket) => {
     const avatar = (data && data.avatar) || '😎';
     let code = generateCode();
     while (rooms.has(code)) code = generateCode();
-    rooms.set(code, { code, players: [createPlayer(socket.id, nickname, avatar)], currentTurn: null, phase: 'waiting', winner: null });
+    const token = generateToken();
+    rooms.set(code, { code, players: [createPlayer(socket.id, nickname, avatar, token)], currentTurn: null, phase: 'waiting', winner: null });
+    sessionTokens.set(token, { code, playerIndex: 0 });
     socket.join(code); socket.roomCode = code; socket.playerIndex = 0;
-    cb({ success: true, code, playerIndex: 0 });
+    cb({ success: true, code, playerIndex: 0, token });
   });
 
   socket.on('join-room', (data, cb) => {
     if (typeof data === 'string') data = { code: data };
     const code = data.code, nickname = data.nickname || 'Oyuncu 2', avatar = data.avatar || '😎';
     const room = rooms.get(code);
-    if (!room) return cb({ success: false, error: 'Oda bulunamadı.' });
-    if (room.players.length >= 2) return cb({ success: false, error: 'Oda dolu.' });
-    if (room.phase !== 'waiting') return cb({ success: false, error: 'Oyun başlamış.' });
-    room.players.push(createPlayer(socket.id, nickname, avatar));
+    if (!room) return cb({ success: false, error: 'errRoomNotFound' });
+    if (room.players.length >= 2) return cb({ success: false, error: 'errRoomFull' });
+    if (room.phase !== 'waiting') return cb({ success: false, error: 'errGameStarted' });
+    const token = generateToken();
+    room.players.push(createPlayer(socket.id, nickname, avatar, token));
     room.phase = 'placement';
+    sessionTokens.set(token, { code, playerIndex: 1 });
     socket.join(code); socket.roomCode = code; socket.playerIndex = 1;
-    cb({ success: true, code, playerIndex: 1 });
+    cb({ success: true, code, playerIndex: 1, token });
     io.to(code).emit('phase-change', { phase: 'placement', ships: SHIPS, players: getPlayersInfo(room) });
+  });
+
+  socket.on('rejoin-room', (token, cb) => {
+    if (typeof cb !== 'function') return;
+    const info = sessionTokens.get(token);
+    if (!info) return cb({ success: false, error: 'errRejoinUnavailable' });
+    const room = rooms.get(info.code);
+    if (!room) { sessionTokens.delete(token); return cb({ success: false, error: 'errRejoinUnavailable' }); }
+    if (room.phase === 'finished') return cb({ success: false, error: 'errRejoinUnavailable' });
+    const idx = info.playerIndex;
+    const player = room.players[idx];
+    if (!player || player.token !== token) return cb({ success: false, error: 'errRejoinUnavailable' });
+
+    player.id = socket.id;
+    socket.join(room.code); socket.roomCode = room.code; socket.playerIndex = idx;
+
+    const oppIdx = idx === 0 ? 1 : 0;
+    const opp = room.players[oppIdx];
+    if (opp) {
+      const oppSocket = io.sockets.sockets.get(opp.id);
+      if (oppSocket && oppSocket.connected) oppSocket.emit('opponent-reconnected');
+    }
+
+    cb({
+      success: true,
+      code: room.code,
+      playerIndex: idx,
+      phase: room.phase,
+      ships: SHIPS,
+      players: getPlayersInfo(room),
+      currentTurn: room.currentTurn,
+      myReady: player.ready,
+      myShips: player.ships,
+      myShots: player.shots,
+      myHitsReceived: opp ? opp.shots : emptyBoard(),
+      oppSunkShips: opp ? opp.ships.filter(s => s.sunk).map(s => ({ name: s.name, size: s.size, x: s.x, y: s.y, horizontal: s.horizontal })) : []
+    });
   });
 
   socket.on('place-ships', (shipsData, cb) => {
     const room = rooms.get(socket.roomCode);
-    if (!room || room.phase !== 'placement') return cb({ success: false, error: 'Geçersiz durum.' });
+    if (!room || room.phase !== 'placement') return cb({ success: false, error: 'errInvalidState' });
     const player = room.players[socket.playerIndex];
-    if (player.ready) return cb({ success: false, error: 'Zaten yerleştirildi.' });
-    if (!validateShips(shipsData)) return cb({ success: false, error: 'Geçersiz yerleşim.' });
+    if (player.ready) return cb({ success: false, error: 'errAlreadyReady' });
+    if (!validateShips(shipsData)) return cb({ success: false, error: 'errInvalidPlacement' });
     player.ships = shipsData; player.board = buildBoard(shipsData); player.ready = true;
     cb({ success: true });
     const oppIdx = socket.playerIndex === 0 ? 1 : 0;
@@ -126,12 +173,12 @@ io.on('connection', (socket) => {
 
   socket.on('fire', ({ x, y }, cb) => {
     const room = rooms.get(socket.roomCode);
-    if (!room || room.phase !== 'battle') return cb({ success: false, error: 'Geçersiz.' });
-    if (room.currentTurn !== socket.playerIndex) return cb({ success: false, error: 'Sıra sende değil.' });
-    if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return cb({ success: false, error: 'Geçersiz koordinat.' });
+    if (!room || room.phase !== 'battle') return cb({ success: false, error: 'errInvalid' });
+    if (room.currentTurn !== socket.playerIndex) return cb({ success: false, error: 'errNotYourTurn' });
+    if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) return cb({ success: false, error: 'errInvalidCoord' });
     const oppIdx = socket.playerIndex === 0 ? 1 : 0;
     const opp = room.players[oppIdx], atk = room.players[socket.playerIndex];
-    if (atk.shots[y][x] !== 0) return cb({ success: false, error: 'Zaten ateş edildi.' });
+    if (atk.shots[y][x] !== 0) return cb({ success: false, error: 'errAlreadyFired' });
     const hit = opp.board[y][x] === 1;
     atk.shots[y][x] = hit ? 2 : 1;
     let sunkShip = null, gameOver = false;
@@ -164,7 +211,7 @@ io.on('connection', (socket) => {
     if (p) p.wantsRematch = true;
 
     if (room.players.every(player => player && player.wantsRematch)) {
-      room.players.forEach((player, i) => { room.players[i] = createPlayer(player.id, player.nickname); });
+      room.players.forEach((player, i) => { room.players[i] = createPlayer(player.id, player.nickname, player.avatar, player.token); });
       room.phase = 'placement'; room.currentTurn = null; room.winner = null;
       io.to(room.code).emit('phase-change', { phase: 'placement', ships: SHIPS, players: getPlayersInfo(room) });
     } else {
@@ -182,18 +229,26 @@ io.on('connection', (socket) => {
           if (s && s.connected) s.emit('opponent-disconnected');
         }
       });
-      // Clean up room after grace period if both players gone
+      // Clean up room after grace period if both players gone (grace period allows reconnection)
       setTimeout(() => {
         const r = rooms.get(socket.roomCode);
         if (r && !r.players.some(p => io.sockets.sockets.get(p.id)?.connected)) {
+          r.players.forEach(p => sessionTokens.delete(p.token));
           rooms.delete(socket.roomCode);
         }
-      }, 30000);
+      }, 60000);
     }
   });
 });
 
-setInterval(() => { for (const [code, room] of rooms) if (!room.players.some(p => io.sockets.sockets.get(p.id)?.connected)) rooms.delete(code); }, 60000);
+setInterval(() => {
+  for (const [code, room] of rooms) {
+    if (!room.players.some(p => io.sockets.sockets.get(p.id)?.connected)) {
+      room.players.forEach(p => sessionTokens.delete(p.token));
+      rooms.delete(code);
+    }
+  }
+}, 60000);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
