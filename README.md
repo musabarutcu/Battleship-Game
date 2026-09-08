@@ -18,29 +18,11 @@
 
 ## Ekran Görüntüleri
 
-<table>
-<tr>
-<td width="50%"><img src="screenshots/01-lobby.png" alt="Lobi ekranı"></td>
-<td width="50%"><img src="screenshots/02-invite-qr.png" alt="Davet linki ve karekod"></td>
-</tr>
-<tr>
-<td align="center"><sub>Lobi — takma ad, avatar seçimi, oda oluştur/katıl</sub></td>
-<td align="center"><sub>Davet linki + otomatik oluşan karekod</sub></td>
-</tr>
-<tr>
-<td width="50%"><img src="screenshots/03-battle-light.png" alt="Savaş ekranı - açık tema"></td>
-<td width="50%"><img src="screenshots/04-battle-dark.png" alt="Savaş ekranı - koyu tema"></td>
-</tr>
-<tr>
-<td align="center"><sub>Savaş ekranı — açık tema</sub></td>
-<td align="center"><sub>Savaş ekranı — koyu tema</sub></td>
-</tr>
-</table>
-
-<div align="center">
-<img src="screenshots/05-mobile.png" alt="Mobil görünüm" width="320">
-<br><sub>Mobil uyumlu tab arayüzü ve oyun içi sohbet</sub>
-</div>
+<p align="center">
+  <img src="screenshots/01-lobby.png" alt="Lobi Ekranı">
+  <br><br>
+  <img src="screenshots/02-battle.png" alt="Savaş Ekranı">
+</p>
 
 ## Özellikler
 
